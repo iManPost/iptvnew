@@ -1,239 +1,223 @@
 <!DOCTYPE html>
+
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate M3U8 Web Player (CORS Bypassed)</title>
-    <!-- ใช้ไลบรารีสตรีมมิ่งเวอร์ชันล่าสุด -->
-    <script src="https://jsdelivr.net"></script>
-    
-    <style>
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: #111;
-            color: #fff;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .container {
-            max-width: 800px;
-            width: 100%;
-        }
-        .player-container {
-            background: #000;
-            width: 100%;
-            aspect-ratio: 16/9;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
-        }
-        video {
-            width: 100%;
-            height: 100%;
-        }
-        .now-playing {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #00ff66;
-            text-align: center;
-        }
-        .channel-list {
-            background-color: #1e1e1e;
-            border-radius: 8px;
-            padding: 10px;
-            max-height: 350px;
-            overflow-y: auto;
-            border: 1px solid #333;
-        }
-        .channel-item {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            border-bottom: 1px solid #2a2a2a;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .channel-item:hover {
-            background-color: #2a2a2a;
-        }
-        .channel-logo {
-            width: 50px;
-            height: 50px;
-            object-fit: contain;
-            margin-right: 15px;
-            border-radius: 6px;
-            background: #fff;
-            padding: 2px;
-        }
-        .channel-info h4 {
-            margin: 0 0 5px 0;
-            font-size: 1rem;
-        }
-        .channel-info span {
-            font-size: 0.75rem;
-            color: #bbb;
-            background: #333;
-            padding: 2px 8px;
-            border-radius: 4px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M3U8 IPTV Player</title>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+body{
+    margin:0;
+    padding:20px;
+    background:#111;
+    color:#fff;
+    font-family:Arial,sans-serif;
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+}
+
+.player{
+    width:100%;
+    aspect-ratio:16/9;
+    background:#000;
+    border-radius:10px;
+    overflow:hidden;
+}
+
+video{
+    width:100%;
+    height:100%;
+}
+
+.current{
+    padding:15px 0;
+    font-size:20px;
+    font-weight:bold;
+    color:#00ff88;
+}
+
+.playlist{
+    background:#1c1c1c;
+    border-radius:10px;
+    overflow:hidden;
+}
+
+.item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    cursor:pointer;
+    border-bottom:1px solid #333;
+}
+
+.item:hover{
+    background:#2a2a2a;
+}
+
+.item img{
+    width:60px;
+    height:60px;
+    object-fit:contain;
+    background:#fff;
+    border-radius:6px;
+}
+
+.info h4{
+    margin:0;
+}
+
+.info span{
+    color:#aaa;
+    font-size:12px;
+}
+</style>
+
 </head>
 <body>
 
 <div class="container">
-    <!-- ส่วนเครื่องเล่นวิดีโอ -->
-    <div class="player-container">
-        <video id="video" controls autoplay playsinline muted></video>
-    </div>
-    <div class="now-playing" id="current-title">กำลังโหลดรายการช่อง...</div>
 
-    <!-- รายการช่องโทรทัศน์ -->
-    <div class="channel-list" id="playlist"></div>
+<div class="player">
+<video id="video" controls autoplay playsinline></video>
+</div>
+
+<div id="current" class="current">
+เลือกช่องเพื่อเริ่มเล่น
+</div>
+
+<div id="playlist" class="playlist"></div>
+
 </div>
 
 <script>
-    // ตัวอย่างข้อมูลไฟล์ M3U ของคุณรวมกับช่อง CH3 HD
-    const m3uRawData = `#EXTINF:-1 group-title="ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/LOGO3HD.PNG",CH3 HD
+
+const m3uData = `
+#EXTINF:-1 tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE/channelicon/LOGO3HD.PNG" group-title="Digital TV",CH3 HD
 https://lb-gmmz.sky-cdn.com/gmm/ch3.m3u8
-#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/LOGO3HD.PNG",CH3 HD
-https://lb-gmmz.sky-cdn.com/gmm/ch3.m3u8
-#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://58-64-52-73-rewriter.ais-vidnt.com/ais/play/origin/LIVE//channelicon//ch5new.logo.png",CH5 HD
-https://lb-gmmz.sky-cdn.com/gmm/ch5.m3u8
-#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/35.png",CH7 HD
+
+#EXTINF:-1 tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/35.png" group-title="Digital TV",CH7 HD
 https://lb-gmmz.sky-cdn.com/gmm/ch7.m3u8
-#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/30.png",MCOT HD
+
+#EXTINF:-1 tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/30.png" group-title="Digital TV",MCOT HD
 https://mcothd-streaming-edge-cdn.mcot.net/tencentmcot/smil:tencentmcot.smil/playlist.m3u8
-#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/0001.png",NBT HD
-https://cdn-edge.iiptvcdn.com/live_event/smil:f180-054a-38d7-ce66-f7cf.smil/playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-logo="https://pinimg.com" group-title="🌐Streaming",MOVIE Sony
-#EXTVLCOPT:http-user-agent=แชร์เลย
-https://nxplay.com.br`;
+`;
 
-    const videoElement = document.getElementById('video');
-    const titleElement = document.getElementById('current-title');
-    let hlsPlayer = null;
+const video = document.getElementById("video");
+const current = document.getElementById("current");
+const playlist = document.getElementById("playlist");
 
-    // ใช้ระบบ Proxy ยอดนิยมสำหรับแปลง URL แก้ปัญหาเรื่อง CORS ตัวย่อยทั้งหมด
-    const proxyServer = "https://herokuapp.com";
+let hls;
 
-    function parseM3U(data) {
-        const lines = data.split('\n').map(line => line.trim());
-        const channels = [];
-        let currentLogo = "", currentGroup = "", currentName = "", currentUserAgent = "";
+function parseM3U(text){
 
-        lines.forEach(line => {
-            if (line.startsWith('#EXTINF:')) {
-                const logoMatch = line.match(/tvg-logo="([^"]*)"/);
-                currentLogo = logoMatch ? logoMatch[1] : "";
-                const groupMatch = line.match(/group-title="([^"]*)"/);
-                currentGroup = groupMatch ? groupMatch[1] : "Streaming";
-                currentName = line.substring(line.lastIndexOf(',') + 1).trim();
-            } else if (line.startsWith('#EXTVLCOPT:http-user-agent=')) {
-                currentUserAgent = line.replace('#EXTVLCOPT:http-user-agent=', '').trim();
-            } else if (line.startsWith('http')) {
-                channels.push({
-                    name: currentName,
-                    logo: currentLogo,
-                    group: currentGroup,
-                    userAgent: currentUserAgent,
-                    url: line
-                });
-                currentUserAgent = "";
-            }
-        });
-        return channels;
-    }
+    const lines = text.split("\n");
 
-    function playStream(channel) {
-        titleElement.innerText = "กำลังเล่น: " + channel.name;
+    const channels = [];
 
-        if (hlsPlayer) { hlsPlayer.destroy(); hlsPlayer = null; }
-        videoElement.src = "";
+    let name = "";
+    let logo = "";
+    let group = "";
 
-        if (Hls.isSupported()) {
-            hlsPlayer = new Hls({
-                // ฟังก์ชันสำคัญ: บังคับให้โหลดไฟล์ส่วนย่อย (.ts / m3u8 ข้างใน) วิ่งผ่าน Proxy ทั้งหมดเพื่อแก้เรื่อง CORS บล็อก
-                xhrSetup: function (xhr, url) {
-                    // หากลิงก์ย่อยยังไม่ได้ถูกแปลง ให้แปลงผ่าน proxy ทันที
-                    if (!url.startsWith(proxyServer) && url.startsWith('http')) {
-                        const modifiedUrl = proxyServer + url;
-                        xhr.open('GET', modifiedUrl, true);
-                    }
-                    // แนบค่า User-Agent พิเศษกรณีที่บางช่องต้องการระบุเจาะจง
-                    if (channel.userAgent) {
-                        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-                    }
-                }
+    for(let i=0;i<lines.length;i++){
+
+        const line = lines[i].trim();
+
+        if(line.startsWith("#EXTINF")){
+
+            const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+            const groupMatch = line.match(/group-title="([^"]+)"/);
+
+            logo = logoMatch ? logoMatch[1] : "";
+            group = groupMatch ? groupMatch[1] : "Other";
+
+            name = line.split(",").pop().trim();
+
+        }
+        else if(line.startsWith("http")){
+
+            channels.push({
+                name,
+                logo,
+                group,
+                url:line
             });
 
-            // แปลงลิงก์หลักก้าวแรกผ่าน Proxy เพื่ออ่านโครงสร้างข้อมูล
-            const initialProxyUrl = proxyServer + channel.url;
-            hlsPlayer.loadSource(initialProxyUrl);
-            hlsPlayer.attachMedia(videoElement);
-            
-            hlsPlayer.on(Hls.Events.MANIFEST_PARSED, function() {
-                videoElement.play().catch(e => console.log("ต้องการให้ผู้ใช้กดปุ่ม Play ก่อนตามกฎความปลอดภัยเบราว์เซอร์"));
-            });
-
-            hlsPlayer.on(Hls.Events.ERROR, function (event, data) {
-                if (data.fatal) {
-                    switch (data.type) {
-                        case Hls.ErrorTypes.NETWORK_ERROR:
-                            console.log("พบปัญหาเครือข่าย กำลังพยายามเชื่อมต่อใหม่...");
-                            hlsPlayer.startLoad();
-                            break;
-                        case Hls.ErrorTypes.MEDIA_ERROR:
-                            console.log("พบปัญหาไฟล์วิดีโอ กำลังกู้คืน...");
-                            hlsPlayer.recoverMediaError();
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            });
-        } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-            // สำหรับเบราว์เซอร์ตระกูล Safari
-            videoElement.src = proxyServer + channel.url;
-            videoElement.play();
-        } else {
-            alert("เบราว์เซอร์นี้ไม่สนับสนุนตัวเล่นสตรีม HLS");
         }
     }
 
-    function initPlayer() {
-        const channels = parseM3U(m3uRawData);
-        const playlistContainer = document.getElementById('playlist');
-        
-        if(channels.length === 0) {
-            titleElement.innerText = "ไม่พบรายการช่อง";
-            return;
-        }
+    return channels;
+}
 
-        channels.forEach((channel, index) => {
-            const item = document.createElement('div');
-            item.className = 'channel-item';
-            item.onclick = () => playStream(channel);
+function playChannel(channel){
 
-            item.innerHTML = `
-                <img class="channel-logo" src="${channel.logo || 'https://placeholder.com'}" onerror="this.src='https://placeholder.com'" alt="logo">
-                <div class="channel-info">
-                    <h4>${channel.name}</h4>
-                    <span>${channel.group}</span>
-                </div>
-            `;
-            playlistContainer.appendChild(item);
-        });
+    current.textContent = "กำลังเล่น: " + channel.name;
 
-        // เปิดเล่นช่องแรกทันทีเมื่อรันระบบ
-        playStream(channels[0]);
+    if(hls){
+        hls.destroy();
     }
 
-    window.onload = initPlayer;
+    if(Hls.isSupported()){
+
+        hls = new Hls();
+
+        hls.loadSource(channel.url);
+
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED,()=>{
+            video.play().catch(()=>{});
+        });
+
+        hls.on(Hls.Events.ERROR,(event,data)=>{
+            console.error(data);
+        });
+
+    }else if(video.canPlayType('application/vnd.apple.mpegurl')){
+
+        video.src = channel.url;
+
+        video.play().catch(()=>{});
+    }
+}
+
+function renderChannels(){
+
+    const channels = parseM3U(m3uData);
+
+    channels.forEach(channel=>{
+
+        const div = document.createElement("div");
+
+        div.className = "item";
+
+        div.innerHTML = `
+            <img src="${channel.logo}" onerror="this.src='https://via.placeholder.com/60'">
+            <div class="info">
+                <h4>${channel.name}</h4>
+                <span>${channel.group}</span>
+            </div>
+        `;
+
+        div.onclick = ()=>playChannel(channel);
+
+        playlist.appendChild(div);
+
+    });
+
+    if(channels.length){
+        playChannel(channels[0]);
+    }
+}
+
+renderChannels();
+
 </script>
 
 </body>
