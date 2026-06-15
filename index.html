@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M3U8 Web Player Pro</title>
-    <!-- โหลดสไตล์และสคริปต์ของ Video.js สำหรับเล่นสตรีมโดยเฉพาะ -->
-    <link href="https://zencdn.net" rel="stylesheet" />
-    <script src="https://zencdn.net"></script>
+    <title>Ultimate M3U8 Web Player (CORS Bypassed)</title>
+    <!-- ใช้ไลบรารีสตรีมมิ่งเวอร์ชันล่าสุด -->
+    <script src="https://jsdelivr.net"></script>
     
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #121212;
-            color: #ffffff;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #111;
+            color: #fff;
             margin: 0;
             padding: 20px;
             display: flex;
@@ -24,21 +23,20 @@
             width: 100%;
         }
         .player-container {
+            background: #000;
             width: 100%;
             aspect-ratio: 16/9;
             margin-bottom: 15px;
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 4px 20px rgba(0,0,0,0.8);
-            background: #000;
         }
-        /* บังคับให้ Video.js แสดงผลเต็มกรอบครอบคลุม 16:9 */
-        .video-js {
-            width: 100% !important;
-            height: 100% !important;
+        video {
+            width: 100%;
+            height: 100%;
         }
         .now-playing {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: bold;
             margin-bottom: 20px;
             color: #00ff66;
@@ -64,8 +62,8 @@
             background-color: #2a2a2a;
         }
         .channel-logo {
-            width: 45px;
-            height: 45px;
+            width: 50px;
+            height: 50px;
             object-fit: contain;
             margin-right: 15px;
             border-radius: 6px;
@@ -74,12 +72,12 @@
         }
         .channel-info h4 {
             margin: 0 0 5px 0;
-            font-size: 0.95rem;
+            font-size: 1rem;
         }
         .channel-info span {
             font-size: 0.75rem;
             color: #bbb;
-            background: #3a3a3a;
+            background: #333;
             padding: 2px 8px;
             border-radius: 4px;
         }
@@ -88,11 +86,9 @@
 <body>
 
 <div class="container">
-    <!-- ส่วนเครื่องเล่นวิดีโอ (Video.js Element) -->
+    <!-- ส่วนเครื่องเล่นวิดีโอ -->
     <div class="player-container">
-        <video id="my-video" class="video-js vjs-default-skin" controls preload="auto" width="640" height="360" data-setup='{}'>
-            <p class="vjs-no-js">กรุณาเปิดใช้งาน JavaScript เพื่อรับชมวิดีโอ</p>
-        </video>
+        <video id="video" controls autoplay playsinline muted></video>
     </div>
     <div class="now-playing" id="current-title">กำลังโหลดรายการช่อง...</div>
 
@@ -101,9 +97,9 @@
 </div>
 
 <script>
-    // ไฟล์ข้อความรวมลิงก์ M3U ทั้งทีวีดิจิตอลและลิงก์ที่มี User-Agent ของคุณ
-    const m3uRawData = `#EXTINF:-1 group-title="ช่องดิจิตอล" tvg-logo="https://ais-vidnt.com",CH3 HD
-https://media.vdohls.com/a_x-X11cJ4GGW/playlist.m3u8
+    // ตัวอย่างข้อมูลไฟล์ M3U ของคุณรวมกับช่อง CH3 HD
+    const m3uRawData = `#EXTINF:-1 group-title="ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/LOGO3HD.PNG",CH3 HD
+https://lb-gmmz.sky-cdn.com/gmm/ch3.m3u8
 #EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/LOGO3HD.PNG",CH3 HD
 https://lb-gmmz.sky-cdn.com/gmm/ch3.m3u8
 #EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://58-64-52-73-rewriter.ais-vidnt.com/ais/play/origin/LIVE//channelicon//ch5new.logo.png",CH5 HD
@@ -116,12 +112,15 @@ https://mcothd-streaming-edge-cdn.mcot.net/tencentmcot/smil:tencentmcot.smil/pla
 https://cdn-edge.iiptvcdn.com/live_event/smil:f180-054a-38d7-ce66-f7cf.smil/playlist.m3u8
 #EXTINF:-1 tvg-id="" tvg-logo="https://pinimg.com" group-title="🌐Streaming",MOVIE Sony
 #EXTVLCOPT:http-user-agent=แชร์เลย
-https://player3.fastfastcdn.com/ttplaylist_b00f5b3b4e5f8ed98dd9a7a627f3cdc7720.m3u8`;
+https://nxplay.com.br`;
 
+    const videoElement = document.getElementById('video');
     const titleElement = document.getElementById('current-title');
-    let player = videojs('my-video'); // เรียกใช้งานโครงสร้างของ Video.js
+    let hlsPlayer = null;
 
-    // ฟังก์ชันจัดการดึงข้อมูลจากข้อความ M3U
+    // ใช้ระบบ Proxy ยอดนิยมสำหรับแปลง URL แก้ปัญหาเรื่อง CORS ตัวย่อยทั้งหมด
+    const proxyServer = "https://herokuapp.com";
+
     function parseM3U(data) {
         const lines = data.split('\n').map(line => line.trim());
         const channels = [];
@@ -150,41 +149,72 @@ https://player3.fastfastcdn.com/ttplaylist_b00f5b3b4e5f8ed98dd9a7a627f3cdc7720.m
         return channels;
     }
 
-    // ฟังก์ชันสั่งเปลี่ยนช่องและเล่นสตรีม
     function playStream(channel) {
         titleElement.innerText = "กำลังเล่น: " + channel.name;
 
-        // ตรวจสอบประเภทไฟล์ (.mpd หรือ .m3u8) เพื่อเลือกตัวถอดรหัสที่ถูกต้อง
-        let streamType = 'application/x-mpegURL'; // ค่าเริ่มต้นสำหรับ .m3u8 (HLS)
-        if (channel.url.includes('.mpd')) {
-            streamType = 'application/dash+xml'; // สำหรับ .mpd (DASH)
-        }
+        if (hlsPlayer) { hlsPlayer.destroy(); hlsPlayer = null; }
+        videoElement.src = "";
 
-        // อัปเดตและสั่งเล่นไฟล์ผ่านโครงสร้างภายในของ Video.js โดยตรง
-        player.src({
-            src: channel.url,
-            type: streamType
-        });
-        
-        player.ready(function() {
-            player.muted(true); // ปิดเสียงเริ่มต้นเพื่อหลีกเลี่ยงการโดนเบราว์เซอร์บล็อกการเล่นอัตโนมัติ (Autoplay)
-            player.play().catch(function(error) {
-                console.log("การเล่นอัตโนมัติถูกระงับ ต้องให้ผู้ใช้คลิกบนหน้าจอก่อนหนึ่งครั้ง");
+        if (Hls.isSupported()) {
+            hlsPlayer = new Hls({
+                // ฟังก์ชันสำคัญ: บังคับให้โหลดไฟล์ส่วนย่อย (.ts / m3u8 ข้างใน) วิ่งผ่าน Proxy ทั้งหมดเพื่อแก้เรื่อง CORS บล็อก
+                xhrSetup: function (xhr, url) {
+                    // หากลิงก์ย่อยยังไม่ได้ถูกแปลง ให้แปลงผ่าน proxy ทันที
+                    if (!url.startsWith(proxyServer) && url.startsWith('http')) {
+                        const modifiedUrl = proxyServer + url;
+                        xhr.open('GET', modifiedUrl, true);
+                    }
+                    // แนบค่า User-Agent พิเศษกรณีที่บางช่องต้องการระบุเจาะจง
+                    if (channel.userAgent) {
+                        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+                    }
+                }
             });
-        });
+
+            // แปลงลิงก์หลักก้าวแรกผ่าน Proxy เพื่ออ่านโครงสร้างข้อมูล
+            const initialProxyUrl = proxyServer + channel.url;
+            hlsPlayer.loadSource(initialProxyUrl);
+            hlsPlayer.attachMedia(videoElement);
+            
+            hlsPlayer.on(Hls.Events.MANIFEST_PARSED, function() {
+                videoElement.play().catch(e => console.log("ต้องการให้ผู้ใช้กดปุ่ม Play ก่อนตามกฎความปลอดภัยเบราว์เซอร์"));
+            });
+
+            hlsPlayer.on(Hls.Events.ERROR, function (event, data) {
+                if (data.fatal) {
+                    switch (data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            console.log("พบปัญหาเครือข่าย กำลังพยายามเชื่อมต่อใหม่...");
+                            hlsPlayer.startLoad();
+                            break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            console.log("พบปัญหาไฟล์วิดีโอ กำลังกู้คืน...");
+                            hlsPlayer.recoverMediaError();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            });
+        } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+            // สำหรับเบราว์เซอร์ตระกูล Safari
+            videoElement.src = proxyServer + channel.url;
+            videoElement.play();
+        } else {
+            alert("เบราว์เซอร์นี้ไม่สนับสนุนตัวเล่นสตรีม HLS");
+        }
     }
 
-    // ฟังก์ชันวาดเมนูรายการช่องบนจอ
     function initPlayer() {
         const channels = parseM3U(m3uRawData);
         const playlistContainer = document.getElementById('playlist');
         
         if(channels.length === 0) {
-            titleElement.innerText = "ไม่พบรายชื่อช่องสัญญาณ";
+            titleElement.innerText = "ไม่พบรายการช่อง";
             return;
         }
 
-        channels.forEach(channel => {
+        channels.forEach((channel, index) => {
             const item = document.createElement('div');
             item.className = 'channel-item';
             item.onclick = () => playStream(channel);
@@ -199,11 +229,10 @@ https://player3.fastfastcdn.com/ttplaylist_b00f5b3b4e5f8ed98dd9a7a627f3cdc7720.m
             playlistContainer.appendChild(item);
         });
 
-        // สั่งเปิดเล่นช่องแรกทันทีเมื่อระบบพร้อมทำงาน
+        // เปิดเล่นช่องแรกทันทีเมื่อรันระบบ
         playStream(channels[0]);
     }
 
-    // ทำงานทันทีเมื่อโหลดหน้าต่างเว็บเพจเสร็จสิ้น
     window.onload = initPlayer;
 </script>
 
