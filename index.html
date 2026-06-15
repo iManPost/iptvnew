@@ -93,7 +93,7 @@ video{
 </div>
 
 <div id="playlist" class="playlist"></div>
-
+<div id="groups" class="groups"></div>
 </div>
 
 <script>
@@ -109,7 +109,7 @@ https://lb-gmmz.sky-cdn.com/gmm/ch7.m3u8
 #EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/30.png",MCOT HD
 https://mcothd-streaming-edge-cdn.mcot.net/tencentmcot/smil:tencentmcot.smil/playlist.m3u8
 
-<div id="groups" class="groups"></div>
+
 #EXTINF:-1 group-title="ช่องข่าว" tvg-logo="https://raw.githubusercontent.com/zaxacaasada/logotv/refs/heads/main/siamthai.png",13สยามไท
 https://live.x2.co.th/live/13livetv-th_720p/index.m3u8	
 #EXTINF:-1 group-title="ช่องข่าว",Cable 37
@@ -231,6 +231,32 @@ function renderChannels(){
 renderChannels();
 
 </script>
+function renderPlaylist(channels){
 
+    playlist.innerHTML = "";
+
+    channels.forEach(channel=>{
+
+        const div = document.createElement("div");
+
+        div.className = "item";
+
+        div.innerHTML = `
+            <img src="${channel.logo}"
+                 onerror="this.src='https://via.placeholder.com/60'">
+
+            <div class="info">
+                <h4>${channel.name}</h4>
+                <span>${channel.group}</span>
+            </div>
+        `;
+
+        div.onclick = ()=>playChannel(channel);
+
+        playlist.appendChild(div);
+
+    });
+
+}
 </body>
 </html>
