@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M3U8 / MPD Web Player</title>
+    <!-- โหลดสคริปต์สำหรับเล่นไฟล์ m3u8 (HLS) และ mpd (DASH) -->
+    <script src="https://jsdelivr.net"></script>
+    <script src="https://jsdelivr.net"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+        .player-container {
+            background: #000;
+            width: 100%;
+            aspect-ratio: 16/9;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        video {
+            width: 100%;
+            height: 100%;
+        }
+        .now-playing {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #4caf50;
+        }
+        .channel-list {
+            background-color: #262626;
+            border-radius: 8px;
+            padding: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .channel-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .channel-item:hover {
+            background-color: #333;
+        }
+        .channel-logo {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            margin-right: 15px;
+            border-radius: 4px;
+            background: #111;
+        }
+        .channel-info h4 {
+            margin: 0 0 5px 0;
+            font-size: 1rem;
+        }
+        .channel-info span {
+            font-size: 0.8rem;
+            color: #aaa;
+            background: #444;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 1. ส่วนของเครื่องเล่นวิดีโอ -->
+    <div class="player-container">
+        <video id="video" controls autoplay></video>
+    </div>
+    <div class="now-playing" id="current-title">กรุณาเลือกช่องรายการด้านล่าง</div>
+
+    <!-- 2. ส่วนของรายชื่อช่องรายการ -->
+    <h3>รายการช่องทั้งหมด</h3>
+    <div class="channel-list" id="playlist">
+        <!-- รายการช่องจะถูกสร้างและแสดงผลตรงนี้ด้วย JavaScript -->
+    </div>
+</div>
+
+<script>
+    // ข้อมูลดิบ M3U ตัวอย่างตามที่คุณให้มา
+    const m3uRawData = `#EXTINF:-1 tvg-id="" tvg-logo="https://pinimg.com" group-title="🌐Streaming",MOVIE Sony
+#EXTVLCOPT:http-user-agent=แชร์เลย
+https://nxplay.com.br   
+    
+#EXTINF:-1 tvg-chno="2"  tvg-id="BoxCinema" tvg-name="BoxCinema" group-title="🌐Streaming" tvg-logo="https://imgur.com",BoxCinema 1080p
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Linux; arm_64; Android 9; MI 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 YaBrowser/20.2.1.120.00 Yptp/1.32 Mobile Safari/537.36
+https://cloudfront.net`;
+
+    const videoElement = document.getElementById('video');
+    const titleElement = document.getElementById('current-title');
+    let hlsPlayer = null;
+    let dashPlayer = null;
+
+    // ฟังก์ชันในการแกะข้อมูล (Parse) M3U ข้อความดิบ
+    function parseM3U(data) {
+        const lines = data.split('\n').map(line => line.trim());
+        const channels = [];
+        
+        let currentLogo = "";
+        let currentGroup = "";
+        let currentName = "";
+        let currentUserAgent = "";
+
+        lines.forEach(line => {
+            if (line.startsWith('#EXTINF:')) {
+                // ค้นหา tvg-logo
+                const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+                currentLogo = logoMatch ? logoMatch[1] : "";
+                
+                // ค้นหา group-title
+                const groupMatch = line.match(/group-title="([^"]*)"/);
+                currentGroup = groupMatch ? groupMatch[1] : "";
+                
+                // ค้นหา ชื่อช่อง หลังจากเครื่องหมายจุลภาคตัวสุดท้าย
+                currentName = line.substring(line.lastIndexOf(',') + 1).trim();
+            } else if (line.startsWith('#EXTVLCOPT:http-user-agent=')) {
+                currentUserAgent = line.replace('#EXTVLCOPT:http-user-agent=', '').trim();
+            } else if (line.startsWith('http')) {
+                channels.push({
+                    name: currentName,
+                    logo: currentLogo,
+                    group: currentGroup,
+                    userAgent: currentUserAgent,
+                    url: line
+                });
+                // รีเซ็ตค่าเพื่อป้องกันค่าซ้ำซ้อนในช่องถัดไป
+                currentUserAgent = "";
+            }
+        });
+        return channels;
+    }
+
+    // ฟังก์ชันสั่งเล่นวิดีโอ (ตรวจสอบนามสกุล .m3u8 หรือ .mpd)
+    function playStream(url, name) {
+        titleElement.innerText = "กำลังเล่น: " + name;
+
+        // ล้างเครื่องเล่นเดิมออกก่อน
+        if (hlsPlayer) { hlsPlayer.destroy(); hlsPlayer = null; }
+        if (dashPlayer) { dashPlayer.destroy(); dashPlayer = null; }
+        videoElement.src = "";
+
+        // กรณีเป็นไฟล์ .mpd (DASH)
+        if (url.includes('.mpd')) {
+            dashPlayer = dashjs.MediaPlayer().create();
+            dashPlayer.initialize(videoElement, url, true);
+        } 
+        // กรณีเป็นไฟล์ .m3u8 หรือไฟล์ประเภทวิดีโอทั่วไป (HLS / TS)
+        else {
+            if (Hls.isSupported()) {
+                hlsPlayer = new Hls();
+                hlsPlayer.loadSource(url);
+                hlsPlayer.attachMedia(videoElement);
+                hlsPlayer.on(Hls.Events.MANIFEST_PARSED, function() {
+                    videoElement.play();
+                });
+            } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+                // สำหรับเบราว์เซอร์ Safari (iOS/Mac) ที่รองรับ HLS ในตัวอยู่แล้ว
+                videoElement.src = url;
+                videoElement.play();
+            } else {
+                alert("เบราว์เซอร์ของคุณไม่รองรับการเล่นสตรีมมิ่งประเภทนี้");
+            }
+        }
+    }
+
+    // เริ่มต้นระบบแสดงผลรายชื่อช่องบนเว็บ
+    function initPlayer() {
+        const channels = parseM3U(m3uRawData);
+        const playlistContainer = document.getElementById('playlist');
+
+        channels.forEach(channel => {
+            const item = document.createElement('div');
+            item.className = 'channel-item';
+            item.onclick = () => playStream(channel.url, channel.name);
+
+            item.innerHTML = `
+                <img class="channel-logo" src="${channel.logo || 'https://placeholder.com'}" alt="logo">
+                <div class="channel-info">
+                    <h4>${channel.name}</h4>
+                    <span>${channel.group || 'Streaming'}</span>
+                </div>
+            `;
+            playlistContainer.appendChild(item);
+        });
+
+        // สั่งให้เล่นช่องแรกโดยอัตโนมัติเมื่อเปิดหน้าเว็บครั้งแรก
+        if (channels.length > 0) {
+            playStream(channels[0].url, channels[0].name);
+        }
+    }
+
+    // เรียกทำงานเมื่อโหลดหน้าเสร็จ
+    window.onload = initPlayer;
+</script>
+
+</body>
+</html>
