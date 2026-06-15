@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-
 <html lang="th">
 <head>
 <meta charset="UTF-8">
@@ -78,7 +76,34 @@ video{
     font-size:12px;
 }
 </style>
+.groups{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    margin:15px 0;
+    padding-bottom:10px;
+}
 
+.groups::-webkit-scrollbar{
+    height:6px;
+}
+
+.group-btn{
+    border:none;
+    padding:10px 16px;
+    border-radius:20px;
+    background:#222;
+    color:#fff;
+    cursor:pointer;
+    white-space:nowrap;
+    flex-shrink:0;
+}
+
+.group-btn.active{
+    background:#00ff88;
+    color:#000;
+    font-weight:bold;
+}
 </head>
 <body>
 
@@ -93,7 +118,7 @@ video{
 </div>
 
 <div id="playlist" class="playlist"></div>
-<div id="groups" class="groups"></div>
+
 </div>
 
 <script>
@@ -102,35 +127,43 @@ const m3uData = `
 #EXTINF:-1 tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE/channelicon/LOGO3HD.PNG" group-title="Digital TV",CH3 HD
 https://lb-gmmz.sky-cdn.com/gmm/ch3.m3u8
 
-#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://58-64-52-73-rewriter.ais-vidnt.com/ais/play/origin/LIVE//channelicon//ch5new.logo.png",CH5 HD
+#EXTINF:-1 group-title="ช่องดิจิตอล" tvg-logo="https://58-64-52-73-rewriter.ais-vidnt.com/ais/play/origin/LIVE//channelicon//ch5new.logo.png",CH5 HD
 https://lb-gmmz.sky-cdn.com/gmm/ch5.m3u8
-#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/35.png",CH7 HD
+
+#EXTINF:-1 group-title="ช่องดิจิตอล" tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/35.png",CH7 HD
 https://lb-gmmz.sky-cdn.com/gmm/ch7.m3u8
-#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/30.png",MCOT HD
+
+#EXTINF:-1 group-title="ช่องดิจิตอล" tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/30.png",MCOT HD
 https://mcothd-streaming-edge-cdn.mcot.net/tencentmcot/smil:tencentmcot.smil/playlist.m3u8
 
-
 #EXTINF:-1 group-title="ช่องข่าว" tvg-logo="https://raw.githubusercontent.com/zaxacaasada/logotv/refs/heads/main/siamthai.png",13สยามไท
-https://live.x2.co.th/live/13livetv-th_720p/index.m3u8	
+https://live.x2.co.th/live/13livetv-th_720p/index.m3u8
+
 #EXTINF:-1 group-title="ช่องข่าว",Cable 37
 http://88.135.69.66:2095/play/live.php?mac=10:27:BE:24:0e:b7&stream=115529&extension=m3u8
 
-
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/5f7790b3ed0c88000720b241/colorLogoPNG_1731837233662.png" group-title="ช่องสำหรับเด็ก",One Piece (eng sub)
 https://jmp2.uk/plu-5f7790b3ed0c88000720b241.m3u8
+
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/5da0c85bd2c9c10009370984/colorLogoPNG.png" group-title="ช่องสำหรับเด็ก",Naruto (eng sub)
-https://jmp2.uk/plu-5da0c85bd2c9c10009370984.m3u8`;
+https://jmp2.uk/plu-5da0c85bd2c9c10009370984.m3u8
+`;
 
 const video = document.getElementById("video");
 const current = document.getElementById("current");
 const playlist = document.getElementById("playlist");
+
+/* สร้างกล่องหมวดหมู่ด้านบนอัตโนมัติ */
+const groupsDiv = document.createElement("div");
+groupsDiv.id = "groups";
+groupsDiv.className = "groups";
+playlist.parentNode.insertBefore(groupsDiv, playlist);
 
 let hls;
 
 function parseM3U(text){
 
     const lines = text.split("\n");
-
     const channels = [];
 
     let name = "";
@@ -147,10 +180,9 @@ function parseM3U(text){
             const groupMatch = line.match(/group-title="([^"]+)"/);
 
             logo = logoMatch ? logoMatch[1] : "";
-            group = groupMatch ? groupMatch[1] : "Other";
+            group = groupMatch ? groupMatch[1] : "อื่นๆ";
 
             name = line.split(",").pop().trim();
-
         }
         else if(line.startsWith("http")){
 
@@ -158,9 +190,8 @@ function parseM3U(text){
                 name,
                 logo,
                 group,
-                url:line
+                url: line
             });
-
         }
     }
 
@@ -187,50 +218,13 @@ function playChannel(channel){
             video.play().catch(()=>{});
         });
 
-        hls.on(Hls.Events.ERROR,(event,data)=>{
-            console.error(data);
-        });
-
     }else if(video.canPlayType('application/vnd.apple.mpegurl')){
 
         video.src = channel.url;
-
         video.play().catch(()=>{});
     }
 }
 
-function renderChannels(){
-
-    const channels = parseM3U(m3uData);
-
-    channels.forEach(channel=>{
-
-        const div = document.createElement("div");
-
-        div.className = "item";
-
-        div.innerHTML = `
-            <img src="${channel.logo}" onerror="this.src='https://via.placeholder.com/60'">
-            <div class="info">
-                <h4>${channel.name}</h4>
-                <span>${channel.group}</span>
-            </div>
-        `;
-
-        div.onclick = ()=>playChannel(channel);
-
-        playlist.appendChild(div);
-
-    });
-
-    if(channels.length){
-        playChannel(channels[0]);
-    }
-}
-
-renderChannels();
-
-</script>
 function renderPlaylist(channels){
 
     playlist.innerHTML = "";
@@ -251,12 +245,65 @@ function renderPlaylist(channels){
             </div>
         `;
 
-        div.onclick = ()=>playChannel(channel);
+        div.onclick = () => playChannel(channel);
 
         playlist.appendChild(div);
+    });
+}
 
+function renderChannels(){
+
+    const channels = parseM3U(m3uData);
+
+    const groups = [...new Set(
+        channels.map(ch => ch.group)
+    )];
+
+    groupsDiv.innerHTML = "";
+
+    groups.forEach((group,index)=>{
+
+        const btn = document.createElement("button");
+
+        btn.className = "group-btn";
+        btn.textContent = group;
+
+        if(index === 0){
+            btn.classList.add("active");
+        }
+
+        btn.addEventListener("click",()=>{
+
+            document
+            .querySelectorAll(".group-btn")
+            .forEach(b=>b.classList.remove("active"));
+
+            btn.classList.add("active");
+
+            const filtered =
+                channels.filter(ch=>ch.group===group);
+
+            renderPlaylist(filtered);
+        });
+
+        groupsDiv.appendChild(btn);
     });
 
+    if(groups.length){
+
+        const firstGroup = groups[0];
+
+        const firstChannels =
+            channels.filter(ch=>ch.group===firstGroup);
+
+        renderPlaylist(firstChannels);
+
+        if(firstChannels.length){
+            playChannel(firstChannels[0]);
+        }
+    }
 }
-</body>
-</html>
+
+renderChannels();
+
+</script>
