@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M3U8 / MPD Web Player (Fixed Version)</title>
-    <!-- โหลดสคริปต์สตรีมมิ่งเวอร์ชันเสถียร -->
-    <script src="https://jsdelivr.net"></script>
+    <title>Ultimate M3U8 Web Player (CORS Bypassed)</title>
+    <!-- ใช้ไลบรารีสตรีมมิ่งเวอร์ชันล่าสุด -->
     <script src="https://jsdelivr.net"></script>
     
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #121212;
-            color: #ffffff;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #111;
+            color: #fff;
             margin: 0;
             padding: 20px;
             display: flex;
@@ -37,7 +36,7 @@
             height: 100%;
         }
         .now-playing {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: bold;
             margin-bottom: 20px;
             color: #00ff66;
@@ -63,21 +62,22 @@
             background-color: #2a2a2a;
         }
         .channel-logo {
-            width: 45px;
-            height: 45px;
+            width: 50px;
+            height: 50px;
             object-fit: contain;
             margin-right: 15px;
             border-radius: 6px;
-            background: #000;
+            background: #fff;
+            padding: 2px;
         }
         .channel-info h4 {
             margin: 0 0 5px 0;
-            font-size: 0.95rem;
+            font-size: 1rem;
         }
         .channel-info span {
             font-size: 0.75rem;
             color: #bbb;
-            background: #3a3a3a;
+            background: #333;
             padding: 2px 8px;
             border-radius: 4px;
         }
@@ -88,7 +88,7 @@
 <div class="container">
     <!-- ส่วนเครื่องเล่นวิดีโอ -->
     <div class="player-container">
-        <video id="video" controls autoplay playsinline></video>
+        <video id="video" controls autoplay playsinline muted></video>
     </div>
     <div class="now-playing" id="current-title">กำลังโหลดรายการช่อง...</div>
 
@@ -97,28 +97,30 @@
 </div>
 
 <script>
-    // ข้อมูลดิบ M3U ตามโจทย์ของผู้ใช้
-    const m3uRawData = `#EXTINF:-1 tvg-id="" tvg-logo="https://pinimg.com" group-title="🌐Streaming",MOVIE Sony
-#EXTVLCOPT:http-user-agent=แชร์เลย
-http://54.37.19.157/tsp1/tracks-v1a1/mono.m3u8
-
+    // ตัวอย่างข้อมูลไฟล์ M3U ของคุณรวมกับช่อง CH3 HD
+    const m3uRawData = `#EXTINF:-1 group-title="ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/LOGO3HD.PNG",CH3 HD
+https://lb-gmmz.sky-cdn.com/gmm/ch3.m3u8
 #EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/LOGO3HD.PNG",CH3 HD
 https://lb-gmmz.sky-cdn.com/gmm/ch3.m3u8
 #EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://58-64-52-73-rewriter.ais-vidnt.com/ais/play/origin/LIVE//channelicon//ch5new.logo.png",CH5 HD
 https://lb-gmmz.sky-cdn.com/gmm/ch5.m3u8
 #EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/35.png",CH7 HD
 https://lb-gmmz.sky-cdn.com/gmm/ch7.m3u8
-
-#EXTINF:-1 tvg-chno="2"  tvg-id="BoxCinema" tvg-name="BoxCinema" group-title="🌐Streaming" tvg-logo="https://imgur.com",BoxCinema 1080p
-#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Linux; arm_64; Android 9; MI 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 YaBrowser/20.2.1.120.00 Yptp/1.32 Mobile Safari/537.36
-http://54.37.19.157/bein2/tracks-v1a1/mono.m3u8`;
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/30.png",MCOT HD
+https://mcothd-streaming-edge-cdn.mcot.net/tencentmcot/smil:tencentmcot.smil/playlist.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/0001.png",NBT HD
+https://cdn-edge.iiptvcdn.com/live_event/smil:f180-054a-38d7-ce66-f7cf.smil/playlist.m3u8
+#EXTINF:-1 tvg-id="" tvg-logo="https://pinimg.com" group-title="🌐Streaming",MOVIE Sony
+#EXTVLCOPT:http-user-agent=แชร์เลย
+https://nxplay.com.br`;
 
     const videoElement = document.getElementById('video');
     const titleElement = document.getElementById('current-title');
     let hlsPlayer = null;
-    let dashPlayer = null;
 
-    // ระบบจัดรูปแบบดึงข้อมูลข้อความดิบ M3U
+    // ใช้ระบบ Proxy ยอดนิยมสำหรับแปลง URL แก้ปัญหาเรื่อง CORS ตัวย่อยทั้งหมด
+    const proxyServer = "https://herokuapp.com";
+
     function parseM3U(data) {
         const lines = data.split('\n').map(line => line.trim());
         const channels = [];
@@ -141,80 +143,78 @@ http://54.37.19.157/bein2/tracks-v1a1/mono.m3u8`;
                     userAgent: currentUserAgent,
                     url: line
                 });
-                currentUserAgent = ""; // รีเซ็ตเพื่อรอรับช่องใหม่
+                currentUserAgent = "";
             }
         });
         return channels;
     }
 
-    // ฟังก์ชันประมวลผลลิงก์และสั่งเล่นสตรีม
     function playStream(channel) {
         titleElement.innerText = "กำลังเล่น: " + channel.name;
 
-        // ล้างหน่วยความจำเครื่องเล่นเก่าออกให้หมดก่อนเล่นช่องใหม่
         if (hlsPlayer) { hlsPlayer.destroy(); hlsPlayer = null; }
-        if (dashPlayer) { dashPlayer.destroy(); dashPlayer = null; }
         videoElement.src = "";
 
-        // ปรับแต่งลิงก์วิดีโอผ่าน CORS Proxy สาธารณะเพื่อแก้ไขปัญหาการบล็อกจากเซิร์ฟเวอร์ต้นทาง
-        // และแนบข้อมูล User-Agent พิเศษเข้าไปใน Header ผ่าน Proxy
-        let finalUrl = channel.url;
-        if (channel.userAgent) {
-            finalUrl = "https://allorigins.win" + encodeURIComponent(channel.url);
-        } else {
-            finalUrl = "https://allorigins.win" + encodeURIComponent(channel.url);
-        }
+        if (Hls.isSupported()) {
+            hlsPlayer = new Hls({
+                // ฟังก์ชันสำคัญ: บังคับให้โหลดไฟล์ส่วนย่อย (.ts / m3u8 ข้างใน) วิ่งผ่าน Proxy ทั้งหมดเพื่อแก้เรื่อง CORS บล็อก
+                xhrSetup: function (xhr, url) {
+                    // หากลิงก์ย่อยยังไม่ได้ถูกแปลง ให้แปลงผ่าน proxy ทันที
+                    if (!url.startsWith(proxyServer) && url.startsWith('http')) {
+                        const modifiedUrl = proxyServer + url;
+                        xhr.open('GET', modifiedUrl, true);
+                    }
+                    // แนบค่า User-Agent พิเศษกรณีที่บางช่องต้องการระบุเจาะจง
+                    if (channel.userAgent) {
+                        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+                    }
+                }
+            });
 
-        // เล่นไฟล์รูปแบบ .mpd (DASH)
-        if (channel.url.includes('.mpd')) {
-            dashPlayer = dashjs.MediaPlayer().create();
-            dashPlayer.initialize(videoElement, finalUrl, true);
-        } 
-        // เล่นไฟล์รูปแบบ .m3u8 / .ts (HLS)
-        else {
-            if (Hls.isSupported()) {
-                // กำหนดโครงสร้างตัวโหลดพิเศษเพื่อ bypass ข้อจำกัด http header
-                hlsPlayer = new Hls({
-                    maxXhrRetryTimeout: 5000,
-                    xhrSetup: function (xhr, url) {
-                        // ปลดเงื่อนไขเพื่อส่งข้อมูลผ่าน proxy ได้อย่างราบรื่น
-                        if(channel.userAgent) {
-                            xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-                        }
+            // แปลงลิงก์หลักก้าวแรกผ่าน Proxy เพื่ออ่านโครงสร้างข้อมูล
+            const initialProxyUrl = proxyServer + channel.url;
+            hlsPlayer.loadSource(initialProxyUrl);
+            hlsPlayer.attachMedia(videoElement);
+            
+            hlsPlayer.on(Hls.Events.MANIFEST_PARSED, function() {
+                videoElement.play().catch(e => console.log("ต้องการให้ผู้ใช้กดปุ่ม Play ก่อนตามกฎความปลอดภัยเบราว์เซอร์"));
+            });
+
+            hlsPlayer.on(Hls.Events.ERROR, function (event, data) {
+                if (data.fatal) {
+                    switch (data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            console.log("พบปัญหาเครือข่าย กำลังพยายามเชื่อมต่อใหม่...");
+                            hlsPlayer.startLoad();
+                            break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            console.log("พบปัญหาไฟล์วิดีโอ กำลังกู้คืน...");
+                            hlsPlayer.recoverMediaError();
+                            break;
+                        default:
+                            break;
                     }
-                });
-                hlsPlayer.loadSource(finalUrl);
-                hlsPlayer.attachMedia(videoElement);
-                hlsPlayer.on(Hls.Events.MANIFEST_PARSED, function() {
-                    videoElement.play().catch(e => console.log("Auto-play blocked by browser, user interaction required."));
-                });
-                hlsPlayer.on(Hls.Events.ERROR, function (event, data) {
-                    if (data.fatal) {
-                        console.log("พบข้อผิดพลาดของระบบโครงสร้างไฟล์ กำลังพยายามแก้ไขใหม่...");
-                        hlsPlayer.recoverMediaError();
-                    }
-                });
-            } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-                // รองรับสำหรับเบราว์เซอร์ Safari บนระบบ iOS / macOS
-                videoElement.src = finalUrl;
-                videoElement.play();
-            } else {
-                alert("อุปกรณ์หรือเว็บเบราว์เซอร์ของคุณไม่รองรับเทคโนโลยีเครื่องเล่นสตรีมมิ่งชิ้นนี้");
-            }
+                }
+            });
+        } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+            // สำหรับเบราว์เซอร์ตระกูล Safari
+            videoElement.src = proxyServer + channel.url;
+            videoElement.play();
+        } else {
+            alert("เบราว์เซอร์นี้ไม่สนับสนุนตัวเล่นสตรีม HLS");
         }
     }
 
-    // ฟังก์ชันสร้าง UI แสดงผลรายการช่อง
     function initPlayer() {
         const channels = parseM3U(m3uRawData);
         const playlistContainer = document.getElementById('playlist');
         
         if(channels.length === 0) {
-            titleElement.innerText = "ไม่พบรายชื่อช่องสัญญาณในไฟล์ M3U";
+            titleElement.innerText = "ไม่พบรายการช่อง";
             return;
         }
 
-        channels.forEach(channel => {
+        channels.forEach((channel, index) => {
             const item = document.createElement('div');
             item.className = 'channel-item';
             item.onclick = () => playStream(channel);
@@ -229,14 +229,12 @@ http://54.37.19.157/bein2/tracks-v1a1/mono.m3u8`;
             playlistContainer.appendChild(item);
         });
 
-        // สั่งให้เล่นช่องแรกอัตโนมัติเมื่อผู้ใช้งานเปิดหน้าเว็บขึ้นมา
+        // เปิดเล่นช่องแรกทันทีเมื่อรันระบบ
         playStream(channels[0]);
     }
 
-    // เริ่มทำงานทันทีเมื่อหน้าเพจโหลดองค์ประกอบเสร็จสิ้น
     window.onload = initPlayer;
 </script>
 
 </body>
 </html>
-
