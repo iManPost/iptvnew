@@ -262,7 +262,9 @@ function playChannel(channel){
 
     current.textContent = "กำลังเล่น: " + channel.name;
 
-
+    // reset fallback
+    fallbackVideo.style.display = "none";
+    document.getElementById("player").style.display = "block";
 
     try{
 
@@ -365,7 +367,7 @@ function renderGroups(){
     });
 
     renderList(channels.filter(c=>c.group===groups[0]));
-    playChannel(channels[0]);
+ 
 }
 
 // ---------------- INIT ----------------
