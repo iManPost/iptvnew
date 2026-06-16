@@ -2,13 +2,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IPTV Player - JW Player</title>
+<title>IPTV Player - JW + HLS</title>
 
+<!-- JW PLAYER -->
 <script src="https://ssl.p.jwpcdn.com/player/v/8.26.0/jwplayer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script>
     jwplayer.key = "XSuP4qMl+9tK17QNb+4+th2Pm9AWgMO/cYH8CI0HGGr7bdjo";
 </script>
+
+<!-- HLS.js fallback -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
 body{
@@ -19,10 +22,7 @@ body{
     font-family:Arial,sans-serif;
 }
 
-.container{
-    max-width:1000px;
-    margin:auto;
-}
+.container{ max-width:1000px; margin:auto; }
 
 .player{
     width:100%;
@@ -80,7 +80,6 @@ body{
     color:#fff;
     cursor:pointer;
     white-space:nowrap;
-    flex-shrink:0;
 }
 
 .group-btn.active{
@@ -88,98 +87,144 @@ body{
     color:#000;
     font-weight:bold;
 }
+
+video{
+    width:100%;
+    height:100%;
+}
 </style>
 
 </head>
+
 <body>
 
 <div class="container">
 
+<!-- JW PLAYER -->
 <div id="player" class="player"></div>
 
-<div id="current" class="current">
-เลือกช่องเพื่อเริ่มเล่น
-</div>
+<!-- fallback HLS -->
+<video id="fallbackVideo" controls autoplay playsinline style="display:none;"></video>
+
+<div id="current" class="current">เลือกช่องเพื่อเริ่มเล่น</div>
 
 <div id="playlist" class="playlist"></div>
 
-<div id="player"></div>
-
-<!-- fallback player -->
-<video id="fallbackVideo" controls autoplay playsinline style="display:none;width:100%;aspect-ratio:16/9;background:#000;"></video>
+</div>
 
 <script>
+
+// ---------------- DATA ----------------
 const m3uData = `
-#EXTINF:-1 group-title="ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/LOGO3HD.PNG",CH3 HD
+#EXTINF:-1 group-title="ช่องดิจิตอล" tvg-logo="",CH3 HD
 https://lb-gmmz.sky-cdn.com/gmm/ch3.m3u8
 
-#EXTINF:-1 group-title="บอลโลก" tvg-logo="https://f.ptcdn.info/428/087/000/m8g5ap59jmMLfEaSYzj-o.jpg",ball 
+#EXTINF:-1 group-title="บอลโลก" tvg-logo="",BALL
 https://raw.githubusercontent.com/Bluestraveller13/super-duper-spork/284b0094ab4f339fe29f54d096eeb381f69395d2/CazeTV.m3u8
 
-#EXTINF:-1 tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE/channelicon/0016.png" group-title="📺DIGITAL.TV",MONO 29
-#KODIPROP:inputstream.adaptive.license_type=clearkey
-#KODIPROP:inputstream.adaptive.license_key=87db4361f7894655a4656e9c8b935a02:b025a4b950df41158a87cfc8d6f2ac34
-https://cri-streamer3.cdn.3bbtv.com:8443/3bb/live/29/29.mpd
-
-#EXTINF:-1 group-title="หนังภาพยนตร์" tvg-logo="https://static-cdn.jtvnw.net/jtv_user_pictures/cd0c92a3-96d1-411b-90c5-ac3f29d86485-profile_image-300x300.png",RED BULL TV
+#EXTINF:-1 group-title="หนังภาพยนตร์" tvg-logo="",RED BULL TV
 https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master_3360.m3u8
 `;
 
+// ---------------- ELEMENTS ----------------
 const playlist = document.getElementById("playlist");
 const current = document.getElementById("current");
+const fallbackVideo = document.getElementById("fallbackVideo");
 
+// ---------------- GLOBAL ----------------
 let channels = [];
-let player;
+let jw;
+let hls;
 
-// -------------------- PARSE M3U --------------------
+// ---------------- PARSE ----------------
 function parseM3U(text){
     const lines = text.split("\n");
     const result = [];
 
-    let name = "";
-    let logo = "";
-    let group = "";
+    let name="", logo="", group="";
 
     for(const line of lines){
         const l = line.trim();
 
         if(l.startsWith("#EXTINF")){
-            const logoMatch = l.match(/tvg-logo="([^"]+)"/);
-            const groupMatch = l.match(/group-title="([^"]+)"/);
+            const g = l.match(/group-title="([^"]+)"/);
+            const lg = l.match(/tvg-logo="([^"]+)"/);
 
-            logo = logoMatch ? logoMatch[1] : "";
-            group = groupMatch ? groupMatch[1] : "อื่นๆ";
-
+            group = g ? g[1] : "อื่นๆ";
+            logo = lg ? lg[1] : "";
             name = l.split(",").pop().trim();
         }
+
         else if(l.startsWith("http")){
             result.push({ name, logo, group, url: l });
         }
     }
+
     return result;
 }
 
-// -------------------- PLAY WITH JWPLAYER --------------------
+// ---------------- PLAY FUNCTION ----------------
 function playChannel(channel){
 
     current.textContent = "กำลังเล่น: " + channel.name;
 
-    if(!player){
-        player = jwplayer("player").setup({
-            width: "100%",
-            aspectratio: "16:9",
-            autostart: true,
-            mute: false,
-            file: channel.url
-        });
-    } else {
-        player.load([{ file: channel.url }]);
-        player.play();
+    // reset fallback
+    fallbackVideo.style.display = "none";
+    document.getElementById("player").style.display = "block";
+
+    try{
+
+        // first init
+        if(!jw){
+            jw = jwplayer("player").setup({
+                width: "100%",
+                aspectratio: "16:9",
+                file: channel.url,
+                autostart: true
+            });
+
+            jw.on("error", () => {
+                console.log("JW fail → fallback");
+                fallbackPlay(channel.url);
+            });
+
+        } else {
+            jw.load([{ file: channel.url }]);
+            jw.play();
+        }
+
+    } catch(e){
+        console.log("JW crash → fallback");
+        fallbackPlay(channel.url);
     }
 }
 
-// -------------------- RENDER LIST --------------------
-function renderPlaylist(list){
+// ---------------- FALLBACK HLS ----------------
+function fallbackPlay(url){
+
+    document.getElementById("player").style.display = "none";
+    fallbackVideo.style.display = "block";
+
+    if(hls) hls.destroy();
+
+    if(Hls.isSupported()){
+        hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(fallbackVideo);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, ()=>{
+            fallbackVideo.play().catch(()=>{});
+        });
+
+    } else if(fallbackVideo.canPlayType("application/vnd.apple.mpegurl")){
+        fallbackVideo.src = url;
+        fallbackVideo.play();
+    }
+}
+
+// ---------------- RENDER LIST ----------------
+function renderList(list){
+
     playlist.innerHTML = "";
 
     list.forEach(ch=>{
@@ -195,13 +240,13 @@ function renderPlaylist(list){
         `;
 
         div.onclick = ()=>playChannel(ch);
-
         playlist.appendChild(div);
     });
 }
 
-// -------------------- GROUP FILTER --------------------
+// ---------------- GROUP ----------------
 function renderGroups(){
+
     const groups = [...new Set(channels.map(c=>c.group))];
 
     const groupDiv = document.createElement("div");
@@ -217,89 +262,23 @@ function renderGroups(){
 
         btn.onclick = ()=>{
             document.querySelectorAll(".group-btn")
-                .forEach(b=>b.classList.remove("active"));
+            .forEach(b=>b.classList.remove("active"));
 
             btn.classList.add("active");
 
-            renderPlaylist(channels.filter(c=>c.group===g));
+            renderList(channels.filter(c=>c.group===g));
         };
 
         groupDiv.appendChild(btn);
     });
 
-    // default
-    renderPlaylist(channels.filter(c=>c.group===groups[0]));
+    renderList(channels.filter(c=>c.group===groups[0]));
     playChannel(channels[0]);
 }
 
-// -------------------- INIT --------------------
+// ---------------- INIT ----------------
 channels = parseM3U(m3uData);
 renderGroups();
-
-let player;
-let hls;
-const video = document.getElementById("fallbackVideo");
-
-// -------------------- PLAY CHANNEL --------------------
-function playChannel(channel){
-
-    current.textContent = "กำลังเล่น: " + channel.name;
-
-    // reset fallback
-    video.style.display = "none";
-
-    // ---------------- JW PLAYER ----------------
-    try {
-        if(!player){
-            player = jwplayer("player").setup({
-                width: "100%",
-                aspectratio: "16:9",
-                autostart: true,
-                file: channel.url,
-                mute: false
-            });
-
-            player.on("error", () => {
-                console.log("JW failed → fallback HLS");
-                fallbackPlay(channel.url);
-            });
-
-        } else {
-            player.load([{ file: channel.url }]);
-            player.play();
-        }
-
-    } catch (e) {
-        console.log("JW crash → fallback");
-        fallbackPlay(channel.url);
-    }
-}
-
-// -------------------- FALLBACK HLS --------------------
-function fallbackPlay(url){
-
-    // hide jw
-    document.getElementById("player").style.display = "none";
-    video.style.display = "block";
-
-    if(hls){
-        hls.destroy();
-    }
-
-    if(Hls.isSupported()){
-        hls = new Hls();
-        hls.loadSource(url);
-        hls.attachMedia(video);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            video.play().catch(()=>{});
-        });
-
-    } else if(video.canPlayType("application/vnd.apple.mpegurl")){
-        video.src = url;
-        video.play().catch(()=>{});
-    }
-}
 
 </script>
 
