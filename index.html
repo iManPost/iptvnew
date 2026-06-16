@@ -1,0 +1,233 @@
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPTV Player - JW Player</title>
+
+<script src="https://ssl.p.jwpcdn.com/player/v/8.26.0/jwplayer.js"></script>
+<script>
+    jwplayer.key = "YOUR_JWPLAYER_KEY";
+</script>
+
+<style>
+body{
+    margin:0;
+    padding:20px;
+    background:#111;
+    color:#fff;
+    font-family:Arial,sans-serif;
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+}
+
+.player{
+    width:100%;
+    aspect-ratio:16/9;
+    background:#000;
+    border-radius:10px;
+    overflow:hidden;
+}
+
+.current{
+    padding:15px 0;
+    font-size:20px;
+    font-weight:bold;
+    color:#00ff88;
+}
+
+.playlist{
+    background:#1c1c1c;
+    border-radius:10px;
+    overflow:hidden;
+}
+
+.item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    cursor:pointer;
+    border-bottom:1px solid #333;
+}
+
+.item:hover{ background:#2a2a2a; }
+
+.item img{
+    width:60px;
+    height:60px;
+    object-fit:contain;
+    background:#fff;
+    border-radius:6px;
+}
+
+.groups{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    margin:15px 0;
+    padding-bottom:10px;
+}
+
+.group-btn{
+    border:none;
+    padding:10px 16px;
+    border-radius:20px;
+    background:#222;
+    color:#fff;
+    cursor:pointer;
+    white-space:nowrap;
+    flex-shrink:0;
+}
+
+.group-btn.active{
+    background:#00ff88;
+    color:#000;
+    font-weight:bold;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+<div id="player" class="player"></div>
+
+<div id="current" class="current">
+เลือกช่องเพื่อเริ่มเล่น
+</div>
+
+<div id="playlist" class="playlist"></div>
+
+</div>
+
+<script>
+const m3uData = `
+#EXTINF:-1 group-title="ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/LOGO3HD.PNG",CH3 HD
+https://lb-gmmz.sky-cdn.com/gmm/ch3.m3u8
+
+#EXTINF:-1 group-title="บอลโลก" tvg-logo="https://f.ptcdn.info/428/087/000/m8g5ap59jmMLfEaSYzj-o.jpg",ball 
+https://raw.githubusercontent.com/Bluestraveller13/super-duper-spork/284b0094ab4f339fe29f54d096eeb381f69395d2/CazeTV.m3u8
+
+#EXTINF:-1 group-title="หนังภาพยนตร์" tvg-logo="https://static-cdn.jtvnw.net/jtv_user_pictures/cd0c92a3-96d1-411b-90c5-ac3f29d86485-profile_image-300x300.png",RED BULL TV
+https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master_3360.m3u8
+`;
+
+const playlist = document.getElementById("playlist");
+const current = document.getElementById("current");
+
+let channels = [];
+let player;
+
+// -------------------- PARSE M3U --------------------
+function parseM3U(text){
+    const lines = text.split("\n");
+    const result = [];
+
+    let name = "";
+    let logo = "";
+    let group = "";
+
+    for(const line of lines){
+        const l = line.trim();
+
+        if(l.startsWith("#EXTINF")){
+            const logoMatch = l.match(/tvg-logo="([^"]+)"/);
+            const groupMatch = l.match(/group-title="([^"]+)"/);
+
+            logo = logoMatch ? logoMatch[1] : "";
+            group = groupMatch ? groupMatch[1] : "อื่นๆ";
+
+            name = l.split(",").pop().trim();
+        }
+        else if(l.startsWith("http")){
+            result.push({ name, logo, group, url: l });
+        }
+    }
+    return result;
+}
+
+// -------------------- PLAY WITH JWPLAYER --------------------
+function playChannel(channel){
+
+    current.textContent = "กำลังเล่น: " + channel.name;
+
+    if(!player){
+        player = jwplayer("player").setup({
+            width: "100%",
+            aspectratio: "16:9",
+            autostart: true,
+            mute: false,
+            file: channel.url
+        });
+    } else {
+        player.load([{ file: channel.url }]);
+        player.play();
+    }
+}
+
+// -------------------- RENDER LIST --------------------
+function renderPlaylist(list){
+    playlist.innerHTML = "";
+
+    list.forEach(ch=>{
+        const div = document.createElement("div");
+        div.className = "item";
+
+        div.innerHTML = `
+            <img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/60'">
+            <div>
+                <div>${ch.name}</div>
+                <small>${ch.group}</small>
+            </div>
+        `;
+
+        div.onclick = ()=>playChannel(ch);
+
+        playlist.appendChild(div);
+    });
+}
+
+// -------------------- GROUP FILTER --------------------
+function renderGroups(){
+    const groups = [...new Set(channels.map(c=>c.group))];
+
+    const groupDiv = document.createElement("div");
+    groupDiv.className = "groups";
+    playlist.parentNode.insertBefore(groupDiv, playlist);
+
+    groups.forEach((g,i)=>{
+        const btn = document.createElement("button");
+        btn.className = "group-btn";
+        btn.textContent = g;
+
+        if(i===0) btn.classList.add("active");
+
+        btn.onclick = ()=>{
+            document.querySelectorAll(".group-btn")
+                .forEach(b=>b.classList.remove("active"));
+
+            btn.classList.add("active");
+
+            renderPlaylist(channels.filter(c=>c.group===g));
+        };
+
+        groupDiv.appendChild(btn);
+    });
+
+    // default
+    renderPlaylist(channels.filter(c=>c.group===groups[0]));
+    playChannel(channels[0]);
+}
+
+// -------------------- INIT --------------------
+channels = parseM3U(m3uData);
+renderGroups();
+
+</script>
+
+</body>
+</html>
