@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPTV Player - JW + HLS Fixed</title>
+
+<script src="https://ssl.p.jwpcdn.com/player/v/8.26.0/jwplayer.js"></script>
+<script>
+jwplayer.key = "YOUR_JWPLAYER_KEY";
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+body{
+    margin:0;
+    padding:20px;
+    background:#111;
+    color:#fff;
+    font-family:Arial,sans-serif;
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+}
+
+.player-wrapper{
+    width:100%;
+    position:relative;
+    padding-top:56.25%;
+    background:#000;
+    border-radius:10px;
+    overflow:hidden;
+}
+
+#player,
+#fallbackVideo{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+}
+
+#fallbackVideo{
+    background:#000;
+    object-fit:contain;
+}
+
+.current{
+    padding:15px 0;
+    font-size:20px;
+    font-weight:bold;
+    color:#00ff88;
+}
+
+.groups{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    margin:15px 0;
+    padding-bottom:10px;
+}
+
+.group-btn{
+    border:none;
+    padding:10px 16px;
+    border-radius:20px;
+    background:#222;
+    color:#fff;
+    cursor:pointer;
+    white-space:nowrap;
+}
+
+.group-btn.active{
+    background:#00ff88;
+    color:#000;
+    font-weight:bold;
+}
+
+.playlist{
+    background:#1c1c1c;
+    border-radius:10px;
+    overflow:hidden;
+}
+
+.item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    cursor:pointer;
+    border-bottom:1px solid #333;
+}
+
+.item:hover{
+    background:#2a2a2a;
+}
+
+.item img{
+    width:60px;
+    height:60px;
+    object-fit:contain;
+    background:#fff;
+    border-radius:6px;
+}
+
+.active-channel{
+    background:#004d33 !important;
+}
+
+video{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+}
+</style>
+</head>
+<p style="text-align: center;">⚽ LIVE IPTV THAILAND 🎞️ </p>
+<body>
+
+<div class="container">
+
+<div class="player-wrapper">
+    <div id="player"></div>
+
+    <video
+        id="fallbackVideo"
+        controls
+        autoplay
+        playsinline
+        preload="auto"
+        style="display:none">
+    </video>
+</div>
+
+<div id="current" class="current">
+เลือกช่องเพื่อเริ่มเล่น
+</div>
+
+<div id="playlist" class="playlist"></div>
+
+</div>
+
+<script>
+
+// =========================
+// PLAYLIST
+// =========================
+
+const m3uData = `
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/LOGO3HD.PNG",CH3 HD
+https://lb-gmmz.sky-cdn.com/gmm/ch3.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://58-64-52-73-rewriter.ais-vidnt.com/ais/play/origin/LIVE//channelicon//ch5new.logo.png",CH5 HD
+https://lb-gmmz.sky-cdn.com/gmm/ch5.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/35.png",CH7 HD
+https://lb-gmmz.sky-cdn.com/gmm/ch7.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/30.png",MCOT HD
+https://mcothd-streaming-edge-cdn.mcot.net/tencentmcot/smil:tencentmcot.smil/playlist.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/0001.png",NBT HD
+https://cdn-edge.iiptvcdn.com/live_event/smil:f180-054a-38d7-ce66-f7cf.smil/playlist.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://58-64-52-73-rewriter.ais-vidnt.com/ais/play/origin/LIVE/channelicon/0014.png",THAI PBS HD
+https://thaipbs-ophctt.cdn.byteark.com/live/playlist.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/0048.png",TPTV
+https://lb-gmmz.sky-cdn.com/gmm/tptv.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE/channelicon/R2_0053.png",TNN16
+https://lb-gmmz.sky-cdn.com/gmm/tnn16.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE/channelicon//0015_R.png",Workpoint
+https://lb-gmmz.sky-cdn.com/gmm/workpoint.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://cms.dmpcdn.com/livetv/2023/09/15/84504210-5377-11ee-aaa1-7d584d8ca7a4_webp_original.webp",TRUE4U
+https://iptv36.vercel.app/api/true.m3u8?channel=true4u
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/27.png",CH8
+https://lb-gmmz.sky-cdn.com/gmm/ch8.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE/channelicon/0016.png",Mono 29
+https://p1.cdn.vet/live/ch38/i/ch38i.m3u8?sid=b5yOWUxMWIyYmFmZGRiYjFhYzVjNgOGE2NWFhMTBiMjk5ZTQ4
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://gigatv.3bbtv.co.th/wp-content/themes/changwattana/assets/channel/25.png",GMM 25
+https://lb-gmmz.sky-cdn.com/gmm/gmm25.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE/channelicon/0012.png",ONE31 HD
+https://lb-gmmz.sky-cdn.com/gmm/one.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE/channelicon/AmarinTV_NEW512.png",AmarinTV HD
+https://lb-gmmz.sky-cdn.com/gmm/amarin.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://58-64-52-73-rewriter.ais-vidnt.com/ais/play/origin/LIVE/channelicon/R_0022.png",PPTV HD
+https://lb-gmmz.sky-cdn.com/gmm/pptv.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE/channelicon/0013_R.png",Thairath TV
+https://udn-streamer1.cdn.3bbtv.com:8443/3bb/live/32/32.mpd
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://cms.dmpcdn.com/livetv/2022/02/10/e00c0e00-8a3c-11ec-8f9e-831d2ccecc69_webp_original.webp",TSPORTS 7
+https://lb-gmmz.sky-cdn.com/gmm/tsport7.m3u8
+####################################################################################
+    
+#EXTINF:-1 group-title="⚽บอลโลก" tvg-logo="https://f.ptcdn.info/428/087/000/m8g5ap59jmMLfEaSYzj-o.jpg",ball 
+#EXTVLCOPT:http-referrer=https://github.com/
+https://raw.githubusercontent.com/Bluestraveller13/super-duper-spork/284b0094ab4f339fe29f54d096eeb381f69395d2/CazeTV.m3u8
+
+#EXTINF:-1 tvg-id="" tvg-logo="https://raw.githubusercontent.com/Nebiela/liveiptvneti/refs/heads/main/images.jpg" group-title="⚽บอลโลก",cazetv 1
+https://dfr80qz435crc.cloudfront.net/MNOP/Amagi/Caze/Caze_TV_BR/Caze_TV.m3u8
+
+#EXTINF:-1 tvg-id="" tvg-logo="https://raw.githubusercontent.com/Nebiela/liveiptvneti/refs/heads/main/images.jpg" group-title="⚽บอลโลก",cazetv 2
+https://raw.githubusercontent.com/rdc1793/canaisiptv/d03c08389570f97a1bf44cbc4b4b76840eaec6f0/cazetv.m3u8
+    
+#EXTINF:-1 tvg-id="" tvg-logo="https://raw.githubusercontent.com/Nebiela/liveiptvneti/refs/heads/main/images.jpg" group-title="⚽บอลโลก",cazetv 3
+https://raw.githubusercontent.com/rdc1793/canaisiptv/d03c08389570f97a1bf44cbc4b4b76840eaec6f0/cazetv.m3u8
+
+    
+#EXTINF:-1 tvg-id="" tvg-logo="https://rtm-images.glueapi.io/320x0/live_channel/TV1.jpg" group-title="⚽บอลโลก",tv1
+https://live.livedoomovies.com:4433/api/hls/live/82290/playlist.m3u8
+    
+#EXTINF:-1 tvg-id="" tvg-logo="https://cdn.aptoide.com/imgs/6/a/9/6a9d6294be85d251de1c330f2800763e_fgraphic.png" group-title="⚽บอลโลก",CTSport
+http://88.212.7.10/live/test_ctsport_25p/playlist.m3u8
+http://88.212.15.19/live/test_ctsport_25p/playlist.m3u8
+http://185.188.188.235/live/ctsport/playlist.m3u8
+
+#EXTINF:-1 tvg-logo="https://img.utdstc.com/icon/2d7/9d3/2d79d3e9064d818d12d30b94b0ea769c81f6bb7de39f15be544de462a233ab6d:200"group-title="⚽บอลโลก":http-referrer="https://github.com/",MAX01
+#EXTVLCOPT:http-referrer=https://github.com/
+http://185.246.209.113/FoxSports1HD/index.m3u8
+
+
+#EXTINF:-1 tvg-logo="https://img.utdstc.com/icon/2d7/9d3/2d79d3e9064d818d12d30b94b0ea769c81f6bb7de39f15be544de462a233ab6d:200"group-title="⚽บอลโลก":http-referrer="https://github.com/",MAX02
+#EXTVLCOPT:http-referrer=https://github.com/
+https://blive99.github.io/m3u8/sporttv/monomax2.m3u8
+
+#EXTINF:-1 group-title="" tvg-logo="https://www.newscaststudio.com/wp-content/uploads/2025/06/fox-world-cup-2026.jpg",foxsports
+https://cdn2.stream.atmflix.live/atmflixlive/foxsports/playlist.m3u8
+#####################################################################################
+
+#EXTINF:-1 tvg-id="" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/R_0148.png" group-title="🎞️ หนังภาพยนตร์",HBO
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36
+#EXTVLCOPT:http-origin=http://ultratv.one:2095/live
+#EXTVLCOPT:http-referrer=http://ultratv.one:2095/live/
+http://ultratv.one:2095/live/hCPtsREFtA/Xj25tg0ZXi/115704.m3u8
+
+#EXTINF:-1 group-title="🎞️ หนังภาพยนตร์" tvg-logo="https://static-cdn.jtvnw.net/jtv_user_pictures/cd0c92a3-96d1-411b-90c5-ac3f29d86485-profile_image-300x300.png",RED BULL TV
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Linux; Android 7.1.2; TV BOX Build/NHG47L) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36
+#EXTVLCOPT:http-referrer=https://freetvdd.com/
+https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master_3360.m3u8
+
+
+#################################################################################
+#EXTINF:-1 group-title="ช่องข่าว" tvg-logo="https://i.imgur.com/tRFnV9M.png",Top News
+https://live.topnews.co.th/hls/topnews_a_720.m3u8
+#EXTINF:-1 group-title="ช่องข่าว" tvg-logo="https://i.imgur.com/h3TY38F.png",Nation TV
+https://lb-gmmz.sky-cdn.com/gmm/nation.m3u8
+#EXTINF:-1 group-title="ช่องข่าว" tvg-logo="https://58-64-52-73-rewriter.ais-vidnt.com/ais/play/origin/LIVE/channelicon/0036.png",News1
+https://server1.streamssl.com/stream/news1_mid.m3u8
+#EXTINF:-1 group-title="ช่องข่าว" tvg-logo="https://raw.githubusercontent.com/zaxacaasada/logotv/refs/heads/main/suwannabhumi.png",Suwannabhumi Channel
+https://live.bangkokstream.com:19360/suwannabhumi/suwannabhumi.m3u8
+#EXTINF:-1 group-title="ช่องข่าว" tvg-logo="https://raw.githubusercontent.com/zaxacaasada/logotv/refs/heads/main/siamthai.png",13สยามไท
+https://live.x2.co.th/live/13livetv-th_720p/index.m3u8	
+
+
+#################################################################################
+
+`;
+
+// =========================
+
+const playlist=document.getElementById("playlist");
+const current=document.getElementById("current");
+const fallbackVideo=document.getElementById("fallbackVideo");
+
+let channels=[];
+let jw=null;
+let hls=null;
+let currentChannel=null;
+
+// =========================
+// PARSE M3U
+// =========================
+
+function parseM3U(text){
+
+    const lines=text.split("\n");
+
+    const result=[];
+
+    let name="";
+    let logo="";
+    let group="";
+
+    for(const line of lines){
+
+        const l=line.trim();
+
+        if(l.startsWith("#EXTINF")){
+
+            const g=l.match(/group-title="([^"]+)"/);
+            const lg=l.match(/tvg-logo="([^"]+)"/);
+
+            group=g ? g[1] : "อื่นๆ";
+            logo=lg ? lg[1] : "";
+
+            name=l.split(",").pop().trim();
+        }
+
+        else if(l.startsWith("http")){
+
+            result.push({
+                name,
+                logo,
+                group,
+                url:l
+            });
+        }
+    }
+
+    return result;
+}
+
+// =========================
+// HLS PLAYER
+// =========================
+
+function fallbackPlay(url){
+
+    document.getElementById("player").style.display="none";
+    fallbackVideo.style.display="block";
+
+    if(hls){
+        hls.destroy();
+        hls=null;
+    }
+
+    fallbackVideo.pause();
+    fallbackVideo.removeAttribute("src");
+
+    if(Hls.isSupported()){
+
+        hls=new Hls({
+            enableWorker:true,
+            lowLatencyMode:true
+        });
+
+        hls.loadSource(url);
+        hls.attachMedia(fallbackVideo);
+
+        hls.on(Hls.Events.MANIFEST_PARSED,()=>{
+
+            fallbackVideo.play().catch(()=>{});
+
+        });
+
+    }
+    else if(fallbackVideo.canPlayType("application/vnd.apple.mpegurl")){
+
+        fallbackVideo.src=url;
+
+        fallbackVideo.play().catch(()=>{});
+    }
+}
+
+// =========================
+// JW PLAYER
+// =========================
+
+function playJW(url){
+
+    fallbackVideo.pause();
+
+    document.getElementById("player").style.display="block";
+    fallbackVideo.style.display="none";
+
+    try{
+
+        if(!jw){
+
+            jw=jwplayer("player").setup({
+                file:url,
+                width:"100%",
+                aspectratio:"16:9",
+                autostart:true
+            });
+
+            jw.on("error",()=>{
+
+                console.log("JW Error");
+            });
+
+        }else{
+
+            jw.stop();
+
+            jw.load([{
+                file:url
+            }]);
+
+            jw.play(true);
+        }
+
+    }catch(e){
+
+        console.log(e);
+    }
+}
+
+// =========================
+// PLAY CHANNEL
+// =========================
+
+function playChannel(channel){
+
+    currentChannel=channel;
+
+    localStorage.setItem(
+        "lastChannel",
+        JSON.stringify(channel)
+    );
+
+    current.textContent=
+        "กำลังเล่น : "+channel.name;
+
+    document
+        .querySelectorAll(".item")
+        .forEach(el=>el.classList.remove("active-channel"));
+
+    const active=document.querySelector(
+        `[data-url="${channel.url}"]`
+    );
+
+    if(active)
+        active.classList.add("active-channel");
+
+    const url=channel.url.toLowerCase();
+
+    if(
+        url.includes(".m3u8")
+    ){
+
+        fallbackPlay(channel.url);
+
+    }else{
+
+        playJW(channel.url);
+
+    }
+}
+
+// =========================
+// RENDER LIST
+// =========================
+
+function renderList(list){
+
+    playlist.innerHTML="";
+
+    list.forEach(ch=>{
+
+        const div=document.createElement("div");
+
+        div.className="item";
+
+        div.dataset.url=ch.url;
+
+        div.innerHTML=`
+        <img
+        src="${ch.logo}"
+        onerror="this.src='https://via.placeholder.com/60'">
+
+        <div>
+            <div>${ch.name}</div>
+            <small>${ch.group}</small>
+        </div>
+        `;
+
+        div.onclick=()=>playChannel(ch);
+
+        playlist.appendChild(div);
+    });
+}
+
+// =========================
+// GROUPS
+// =========================
+
+function renderGroups(){
+
+    const groups=[
+        ...new Set(
+            channels.map(c=>c.group)
+        )
+    ];
+
+    const groupDiv=
+        document.createElement("div");
+
+    groupDiv.className="groups";
+
+    playlist.parentNode.insertBefore(
+        groupDiv,
+        playlist
+    );
+
+    groups.forEach((g,index)=>{
+
+        const btn=
+            document.createElement("button");
+
+        btn.className="group-btn";
+
+        if(index===0)
+            btn.classList.add("active");
+
+        btn.textContent=g;
+
+        btn.onclick=()=>{
+
+            document
+            .querySelectorAll(".group-btn")
+            .forEach(b=>
+                b.classList.remove("active")
+            );
+
+            btn.classList.add("active");
+
+            renderList(
+                channels.filter(
+                    c=>c.group===g
+                )
+            );
+        };
+
+        groupDiv.appendChild(btn);
+    });
+
+    renderList(
+        channels.filter(
+            c=>c.group===groups[0]
+        )
+    );
+}
+
+// =========================
+// INIT
+// =========================
+
+channels=parseM3U(m3uData);
+
+renderGroups();
+
+const saved=
+localStorage.getItem(
+    "lastChannel"
+);
+
+if(saved){
+
+    try{
+
+        playChannel(
+            JSON.parse(saved)
+        );
+
+    }catch(e){}
+
+}
+</script>
+
+</body>
+<p style="text-align: center;"> แอพจัดทำขึ้นเพื่อความบันเทิง.ภายในครอบครัว.เท่านั้น ไม่ได้จำหน่าย By NETI</p> 
+</html>
