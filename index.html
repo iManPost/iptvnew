@@ -223,7 +223,7 @@ https://live.x2.co.th/live/13livetv-th_720p/index.m3u8
 // ---------------- ELEMENTS ----------------
 const playlist = document.getElementById("playlist");
 const current = document.getElementById("current");
-
+const fallbackVideo = document.getElementById("fallbackVideo");
 
 // ---------------- GLOBAL ----------------
 let channels = [];
@@ -262,9 +262,7 @@ function playChannel(channel){
 
     current.textContent = "กำลังเล่น: " + channel.name;
 
-    // reset fallback
-    fallbackVideo.style.display = "none";
-    document.getElementById("player").style.display = "block";
+
 
     try{
 
