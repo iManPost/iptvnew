@@ -3,31 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IPTV Player - Android TV + MPD DRM Fixed</title>
+<title>IPTV Player - JW + HLS Fixed</title>
 
-<!-- เครื่องเล่นวิดีโอและไลบรารีเสริม -->
-<script src="https://jwpcdn.com"></script>
-<script>jwplayer.key = "XSuP4qMl+9tK17QNb+4+th2Pm9AWgMO/cYH8CI0HGGr7bdjo";</script>
-<script src="https://jsdelivr.net"></script>
-<!-- ไลบรารี dash.js สำหรับเล่นไฟล์ MPD DRM -->
-<script src="https://jsdelivr.net"></script>
+<script src="https://ssl.p.jwpcdn.com/player/v/8.26.0/jwplayer.js"></script>
+<script>
+jwplayer.key = "XSuP4qMl+9tK17QNb+4+th2Pm9AWgMO/cYH8CI0HGGr7bdjo";
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
+    .tv-focus{
+    border:3px solid #00ff88;
+    background:#333 !important;
+    transform:scale(1.02);
+}
+
+.group-btn:focus{
+    outline:none;
+}
+
+.item:focus{
+    outline:none;
+}
 body{
     margin:0;
     padding:20px;
     background:#111;
     color:#fff;
     font-family:Arial,sans-serif;
-    overflow-y: hidden; 
 }
 
 .container{
     max-width:1000px;
     margin:auto;
-    height: 95vh;
-    display: flex;
-    flex-direction: column;
 }
 
 .player-wrapper{
@@ -37,7 +46,6 @@ body{
     background:#000;
     border-radius:10px;
     overflow:hidden;
-    flex-shrink: 0;
 }
 
 #player,
@@ -55,33 +63,28 @@ body{
 }
 
 .current{
-    padding:10px 0;
+    padding:15px 0;
     font-size:20px;
     font-weight:bold;
     color:#00ff88;
-    flex-shrink: 0;
 }
 
 .groups{
     display:flex;
     gap:10px;
     overflow-x:auto;
-    margin:10px 0;
-    padding-bottom:5px;
-    flex-shrink: 0;
+    margin:15px 0;
+    padding-bottom:10px;
 }
 
-.groups::-webkit-scrollbar { display: none; }
-
 .group-btn{
-    border:3px solid transparent;
+    border:none;
     padding:10px 16px;
     border-radius:20px;
     background:#222;
     color:#fff;
     cursor:pointer;
     white-space:nowrap;
-    outline: none;
 }
 
 .group-btn.active{
@@ -90,27 +93,10 @@ body{
     font-weight:bold;
 }
 
-.group-btn:focus, .group-btn.tv-focus{
-    border-color: #fff !important;
-    background: #444;
-    box-shadow: 0 0 15px #fff;
-}
-.group-btn.active:focus, .group-btn.active.tv-focus{
-    border-color: #fff !important;
-    background:#00ff88;
-}
-
-.playlist-wrapper {
-    flex-grow: 1;
-    overflow-y: auto;
+.playlist{
     background:#1c1c1c;
     border-radius:10px;
-}
-.playlist-wrapper::-webkit-scrollbar { display: none; }
-
-.playlist{
-    display: flex;
-    flex-direction: column;
+    overflow:hidden;
 }
 
 .item{
@@ -120,18 +106,10 @@ body{
     padding:12px;
     cursor:pointer;
     border-bottom:1px solid #333;
-    border-left: 5px solid transparent;
-    outline: none;
 }
 
 .item:hover{
     background:#2a2a2a;
-}
-
-.item:focus, .item.tv-focus{
-    background: #333 !important;
-    border-left-color: #ffffff !important;
-    box-shadow: inset 0 0 10px rgba(255,255,255,0.3);
 }
 
 .item img{
@@ -144,7 +122,6 @@ body{
 
 .active-channel{
     background:#004d33 !important;
-    border-left-color: #00ff88 !important;
 }
 
 video{
@@ -161,6 +138,7 @@ video{
 
 <div class="player-wrapper">
     <div id="player"></div>
+
     <video
         id="fallbackVideo"
         controls
@@ -172,22 +150,18 @@ video{
 </div>
 
 <div id="current" class="current">
-กำลังโหลดรายการช่อง...
+เลือกช่องเพื่อเริ่มเล่น
 </div>
 
-<div id="groups" class="groups"></div>
-
-<div class="playlist-wrapper" id="playlistWrapper">
-    <div id="playlist" class="playlist"></div>
-</div>
+<div id="playlist" class="playlist"></div>
 
 </div>
 
 <script>
 
-// ==========================================
-// PLAYLIST DATA
-// ==========================================
+// =========================
+// PLAYLIST
+// =========================
 
 const m3uData = `
 #EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/LOGO3HD.PNG",CH3 HD
@@ -221,181 +195,545 @@ https://lb-gmmz.sky-cdn.com/gmm/nation.m3u8
 
 #################################################################################
 
-#EXTINF:-1 group-title="สารคดี",Fishing Tv
+
 https://amg00793-bbcstudios-amg00793c3-lg-us-2528.playouts.now.amagi.tv/playlist/amg00793-bbcstudios-bbcearta-lgus/playlist.m3u8
 #EXTINF:-1 group-title="สารคดี",Fishing Tv
 https://linear-80.frequency.stream/dist/localnow/80/hls/master/playlist.m3u8
 
-#EXTINF:-1 group-title="🔒 ช่อง DRM" tvg-logo="https://placeholder.com" kid="ใส่ค่า KeyID ของคุณตรงนี้" key="ใส่ค่า Key ของคุณตรงนี้",ตัวอย่างช่อง MPD DRM (ClearKey)
-http://ตัวอย่างลิงก์สตรีมมิ่ง/manifest.mpd
+
+
+#EXTINF:-1 group-title="กีฬา",BEIN SPORT 1
+#KODIPROP:inputstream.adaptive.license_key=12345678-1234-1234-1234-123456789abc:abcdef1234567890abcdef1234567890
+https://example.com/live/channel.mpd
+#########################################################################################################################
+
+
+
+
+
 `;
 
-// ==========================================
-// GLOBAL VARIABLES
-// ==========================================
+// =========================
 
 const playlist=document.getElementById("playlist");
-const playlistWrapper=document.getElementById("playlistWrapper");
 const current=document.getElementById("current");
 const fallbackVideo=document.getElementById("fallbackVideo");
-const groupsContainer=document.getElementById("groups");
 
 let channels=[];
-let displayedChannels=[]; 
 let jw=null;
 let hls=null;
-let dashPlayer=null; 
 let currentChannel=null;
 
-let focusArea = "playlist"; 
-let activeGroupIndex = 0;
-let activeChannelIndex = 0;
-
-// ==========================================
-// PARSE M3U (แก้ไขบั๊ก Regex Object ค้างหน้าโหลดช่อง)
-// ==========================================
+// =========================
+// PARSE M3U
+// =========================
 
 function parseM3U(text){
+
     const lines=text.split("\n");
     const result=[];
-    
-    let tempName="";
-    let tempLogo="";
-    let tempGroup="อื่นๆ";
-    let tempDrm=false;
-    let tempKeyId="";
-    let tempKey="";
+
+    let name="";
+    let logo="";
+    let group="อื่นๆ";
+
+    let drm=false;
+    let keyId="";
+    let key="";
 
     for(const line of lines){
+
         const l=line.trim();
+
         if(!l) continue;
 
         if(l.startsWith("#EXTINF")){
-            const gMatch = l.match(/group-title="([^"]+)"/);
-            tempGroup = (gMatch && gMatch[1]) ? gMatch[1] : "อื่นๆ";
-            
-            const lgMatch = l.match(/tvg-logo="([^"]+)"/);
-            tempLogo = (lgMatch && lgMatch[1]) ? lgMatch[1] : "";
-            
-            const kidMatch = l.match(/kid="([^"]+)"/);
-            const keyMatch = l.match(/key="([^"]+)"/);
-            tempKeyId = (kidMatch && kidMatch[1]) ? kidMatch[1] : "";
-            tempKey = (keyMatch && keyMatch[1]) ? keyMatch[1] : "";
-            tempDrm = (tempKeyId !== "" && tempKey !== "");
 
-            const commaIndex = l.indexOf(",");
-            if(commaIndex !== -1) {
-                tempName = l.substring(commaIndex + 1).trim();
-            } else {
-                tempName = "Unknown Channel";
+            const g=l.match(/group-title="([^"]+)"/);
+            const lg=l.match(/tvg-logo="([^"]+)"/);
+
+            group=g ? g[1] : "อื่นๆ";
+            logo=lg ? lg[1] : "";
+
+            name=l.split(",").pop().trim();
+
+            drm=false;
+            keyId="";
+            key="";
+        }
+
+        else if(
+            l.includes("license_key=")
+        ){
+
+            const data=l.split("license_key=")[1];
+
+            if(data.includes(":")){
+
+                const parts=data.split(":");
+
+                drm=true;
+                keyId=parts[0].trim();
+                key=parts[1].trim();
             }
         }
-        else if(l.startsWith("http")){
-            if(l.toLowerCase().includes(".mpd") && !tempKeyId) {
-                tempDrm = true; 
+
+        else if(
+            l.startsWith("http")
+        ){
+
+            if(!name){
+
+                name="Unknown Channel";
             }
 
             result.push({
-                name: tempName || "Unknown Channel",
-                logo: tempLogo,
-                group: tempGroup,
-                url: l,
-                drm: tempDrm,
-                keyId: tempKeyId,
-                key: tempKey
+
+                name,
+                logo,
+                group,
+
+                url:l,
+
+                drm,
+                keyId,
+                key
             });
-            
-            tempName=""; tempLogo=""; tempGroup="อื่นๆ"; tempDrm=false; tempKeyId=""; tempKey="";
         }
     }
+
     return result;
 }
 
-// ==========================================
-// RESET ALL PLAYERS
-// ==========================================
+// =========================
+// HLS PLAYER
+// =========================
 
-function resetPlayers() {
-    if(jw) { try{ jw.stop(); }catch(e){} }
-    if(hls){ hls.destroy(); hls=null; }
-    if(dashPlayer){ dashPlayer.destroy(); dashPlayer=null; }
-    
+function fallbackPlay(url){
+
+    document.getElementById("player").style.display="none";
+    fallbackVideo.style.display="block";
+
+    if(hls){
+        hls.destroy();
+        hls=null;
+    }
+
     fallbackVideo.pause();
     fallbackVideo.removeAttribute("src");
-    fallbackVideo.load();
+
+    if(Hls.isSupported()){
+
+        hls=new Hls({
+            enableWorker:true,
+            lowLatencyMode:true
+        });
+
+        hls.loadSource(url);
+        hls.attachMedia(fallbackVideo);
+
+        hls.on(Hls.Events.MANIFEST_PARSED,()=>{
+
+            fallbackVideo.play().catch(()=>{});
+
+        });
+
+    }
+    else if(fallbackVideo.canPlayType("application/vnd.apple.mpegurl")){
+
+        fallbackVideo.src=url;
+
+        fallbackVideo.play().catch(()=>{});
+    }
 }
 
-// ==========================================
-// PLAY CHANNEL FUNCTION
-// ==========================================
+// =========================
+// JW PLAYER
+// =========================
+
+function playJW(channel){
+
+    fallbackVideo.pause();
+
+    document.getElementById("player").style.display="block";
+    fallbackVideo.style.display="none";
+
+    let config={
+
+        file:channel.url,
+
+        width:"100%",
+
+        aspectratio:"16:9",
+
+        autostart:true
+    };
+
+    if(
+        channel.url
+        .toLowerCase()
+        .includes(".mpd")
+    ){
+
+        config.type="dash";
+
+        if(channel.drm){
+
+            config.drm={
+
+                clearkey:{
+
+                    keyId:channel.keyId,
+
+                    key:channel.key
+
+                }
+
+            };
+        }
+    }
+
+    try{
+
+        if(!jw){
+
+            jw=jwplayer("player")
+            .setup(config);
+
+        }else{
+
+            jw.remove();
+
+            jw=jwplayer("player")
+            .setup(config);
+        }
+
+    }catch(e){
+
+        console.log(e);
+    }
+}
+
+// =========================
+// PLAY CHANNEL
+// =========================
 
 function playChannel(channel){
+
     currentChannel=channel;
-    localStorage.setItem("lastChannel", JSON.stringify(channel));
-    current.textContent="กำลังเล่น : "+channel.name;
 
-    document.querySelectorAll(".item").forEach(el=>el.classList.remove("active-channel"));
-    const active=document.querySelector(`[data-url="${channel.url}"]`);
-    if(active) active.classList.add("active-channel");
+    localStorage.setItem(
+        "lastChannel",
+        JSON.stringify(channel)
+    );
 
-    resetPlayers();
-    const url=channel.url.toLowerCase();
+    current.textContent=
+    "กำลังเล่น : "+channel.name;
 
-    if(url.includes(".mpd") || channel.drm){
-        document.getElementById("player").style.display="none";
-        fallbackVideo.style.display="block";
+    document
+    .querySelectorAll(".item")
+    .forEach(el=>
+        el.classList.remove(
+            "active-channel"
+        )
+    );
 
-        dashPlayer = dashjs.MediaPlayer().create();
-        dashPlayer.initialize(fallbackVideo, channel.url, true);
+    const active=document.querySelector(
+        `[data-url="${channel.url}"]`
+    );
 
-        if(channel.keyId && channel.key) {
-            const protectionData = {
-                "org.w3.clearkey": {
-                    "clearkeys": {
-                        [channel.keyId]: channel.key
-                    }
-                }
-            };
-            dashPlayer.setProtectionData(protectionData);
-        }
+    if(active)
+        active.classList.add(
+            "active-channel"
+        );
+
+    const url=
+    channel.url.toLowerCase();
+
+    if(url.includes(".m3u8")){
+
+        fallbackPlay(
+            channel.url
+        );
+
     }
-    else if(url.includes(".m3u8")){
-        document.getElementById("player").style.display="none";
-        fallbackVideo.style.display="block";
 
-        if(Hls.isSupported()){
-            hls=new Hls({ enableWorker:true, lowLatencyMode:true });
-            hls.loadSource(channel.url);
-            hls.attachMedia(fallbackVideo);
-            hls.on(Hls.Events.MANIFEST_PARSED,()=>{
-                fallbackVideo.play().catch(()=>{});
-            });
-        }
-        else if(fallbackVideo.canPlayType("application/vnd.apple.mpegurl")){
-            fallbackVideo.src=channel.url;
-            fallbackVideo.play().catch(()=>{});
-        }
+    else if(url.includes(".mpd")){
+
+        playJW(channel);
+
     }
-    else {
-        document.getElementById("player").style.display="block";
-        fallbackVideo.style.display="none";
 
-        try{
-            if(!jw){
-                jw=jwplayer("player").setup({
-                    file:channel.url,
-                    width:"100%",
-                    aspectratio:"16:9",
-                    autostart:true
-                });
-            }else{
-                jw.load([{ file:channel.url }]);
-                jw.play(true);
-            }
-        }catch(e){}
-console.log("JW Player Error:", e);}}}// ==========================================// RENDER LIST & GROUPS UI// ==========================================function renderList(list){playlist.innerHTML="";displayedChannels = list;list.forEach((ch, idx)=>{const div=document.createElement("div");div.className="item";div.tabIndex = "-1";div.dataset.url=ch.url;div.dataset.index = idx;if(currentChannel && currentChannel.url === ch.url){div.className += " active-channel";activeChannelIndex = idx;}div.innerHTML=<img src="${ch.logo}" onerror="this.src='https://placeholder.com'"> <div> <div style="font-weight:bold;">${ch.name}</div> <div style="font-size:12px; color:#aaa; margin-top:4px;">${ch.group}</div> </div>;div.addEventListener("click", () => {activeChannelIndex = idx;focusArea = "playlist";updateTVFocus();playChannel(ch);});playlist.appendChild(div);});}function renderGroups(){groupsContainer.innerHTML = "";const categories = ["ทั้งหมด", ...new Set(channels.map(ch => ch.group))];categories.forEach((cat, index) => {const btn = document.createElement("button");btn.className = "group-btn" + (index === 0 ? " active" : "");btn.textContent = cat;btn.dataset.index = index;btn.addEventListener("click", () => {activeGroupIndex = index;focusArea = "groups";updateTVFocus();switchGroup(cat, btn);});groupsContainer.appendChild(btn);});}function switchGroup(cat, btnElement) {document.querySelectorAll(".group-btn").forEach(b => b.classList.remove("active"));btnElement.classList.add("active");if(cat === "ทั้งหมด"){renderList(channels);} else {const filtered = channels.filter(ch => ch.group === cat);renderList(filtered);}activeChannelIndex = 0;}// ==========================================// ANDROID TV REMOTE D-PAD CONTROL SYSTEM// ==========================================function updateTVFocus() {document.querySelectorAll(".tv-focus").forEach(el => el.classList.remove("tv-focus"));if (focusArea === "groups") {const groupButtons = document.querySelectorAll(".group-btn");if(groupButtons[activeGroupIndex]) {groupButtons[activeGroupIndex].classList.add("tv-focus");groupButtons[activeGroupIndex].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });}} else if (focusArea === "playlist") {const channelItems = document.querySelectorAll(".item");if(channelItems[activeChannelIndex]) {channelItems[activeChannelIndex].classList.add("tv-focus");channelItems[activeChannelIndex].scrollIntoView({ behavior: "smooth", block: "nearest" });}}}window.addEventListener("keydown", (e) => {const groupButtons = document.querySelectorAll(".group-btn");const channelItems = document.querySelectorAll(".item");switch (e.keyCode) {case 37:if (focusArea === "groups") {if (activeGroupIndex > 0) activeGroupIndex--;} else {focusArea = "groups";}updateTVFocus();e.preventDefault();break;case 39:if (focusArea === "groups") {if (activeGroupIndex < groupButtons.length - 1) activeGroupIndex++;}updateTVFocus();e.preventDefault();break;case 38:if (focusArea === "playlist") {if (activeChannelIndex > 0) {activeChannelIndex--;} else {focusArea = "groups";}}updateTVFocus();e.preventDefault();break;case 40:if (focusArea === "groups") {if(channelItems.length > 0) {focusArea = "playlist";}} else if (focusArea === "playlist") {if (activeChannelIndex < channelItems.length - 1) activeChannelIndex++;}updateTVFocus();e.preventDefault();break;case 13:if (focusArea === "groups") {if(groupButtons[activeGroupIndex]) groupButtons[activeGroupIndex].click();} else if (focusArea === "playlist") {if(displayedChannels[activeChannelIndex]) {playChannel(displayedChannels[activeChannelIndex]);}}e.preventDefault();break;case 8:if(focusArea === "playlist") {focusArea = "groups";updateTVFocus();e.preventDefault();}break;}if (e.keyCode >= 48 && e.keyCode <= 57) {const num = e.keyCode - 48;const targetIndex = num === 0 ? 9 : num - 1;if(displayedChannels[targetIndex]) {activeChannelIndex = targetIndex;focusArea = "playlist";updateTVFocus();playChannel(displayedChannels[targetIndex]);}}});// ==========================================// SYSTEM INITIALIZATION// ==========================================window.addEventListener("DOMContentLoaded", () => {channels = parseM3U(m3uData);renderGroups();renderList(channels);const savedChannel = localStorage.getItem("lastChannel");if(savedChannel){try {const parsed = JSON.parse(savedChannel);const matchIndex = displayedChannels.findIndex(ch => ch.url === parsed.url);if(matchIndex !== -1) activeChannelIndex = matchIndex;playChannel(parsed);} catch(e) {localStorage.removeItem("lastChannel");current.textContent = "เลือกช่องเพื่อเริ่มเล่น (ใช้รีโมท ขึ้น/ลง/ซ้าย/ขวา และตกลง)";}} else {current.textContent = "เลือกช่องเพื่อเริ่มเล่น (ใช้รีโมท ขึ้น/ลง/ซ้าย/ขวา และตกลง)";}setTimeout(updateTVFocus, 500);});
+    else{
+
+        playJW(channel);
+    }
+}
+
+// =========================
+// RENDER LIST
+// =========================
+
+function renderList(list){
+
+    playlist.innerHTML="";
+
+    list.forEach(ch=>{
+
+        const div=document.createElement("div");
+
+        div.className="item";
+
+        div.dataset.url=ch.url;
+
+        div.innerHTML=`
+        <img
+        src="${ch.logo}"
+        onerror="this.src='https://via.placeholder.com/60'">
+
+        <div>
+            <div>${ch.name}</div>
+            <small>${ch.group}</small>
+        </div>
+        `;
+
+        div.onclick=()=>playChannel(ch);
+
+        playlist.appendChild(div);
+    });
+}
+
+// =========================
+// GROUPS
+// =========================
+
+function renderGroups(){
+
+    const groups=[
+        ...new Set(
+            channels.map(c=>c.group)
+        )
+    ];
+
+    const groupDiv=
+        document.createElement("div");
+
+    groupDiv.className="groups";
+
+    playlist.parentNode.insertBefore(
+        groupDiv,
+        playlist
+    );
+
+    groups.forEach((g,index)=>{
+
+        const btn=
+            document.createElement("button");
+
+        btn.className="group-btn";
+
+        if(index===0)
+            btn.classList.add("active");
+
+        btn.textContent=g;
+
+        btn.onclick=()=>{
+
+            document
+            .querySelectorAll(".group-btn")
+            .forEach(b=>
+                b.classList.remove("active")
+            );
+
+            btn.classList.add("active");
+
+            renderList(
+                channels.filter(
+                    c=>c.group===g
+                )
+            );
+        };
+
+        groupDiv.appendChild(btn);
+    });
+
+    renderList(
+        channels.filter(
+            c=>c.group===groups[0]
+        )
+    );
+}
+
+// =========================
+// INIT
+// =========================
+
+channels=parseM3U(m3uData);
+
+renderGroups();
+
+const saved=
+localStorage.getItem(
+    "lastChannel"
+);
+
+if(saved){
+
+    try{
+
+        playChannel(
+            JSON.parse(saved)
+        );
+
+    }catch(e){}
+
+}
 </script>
+let selectedIndex=0;
+let selectedGroup=0;
 
+function focusItem(index){
+
+    const items=
+    document.querySelectorAll(".item");
+
+    if(!items.length) return;
+
+    items.forEach(i=>
+        i.classList.remove("tv-focus")
+    );
+
+    if(index<0)
+        index=items.length-1;
+
+    if(index>=items.length)
+        index=0;
+
+    selectedIndex=index;
+
+    items[index]
+    .classList
+    .add("tv-focus");
+
+    items[index].scrollIntoView({
+
+        behavior:"smooth",
+
+        block:"nearest"
+
+    });
+}
+
+function changeGroup(dir){
+
+    const groups=
+    document.querySelectorAll(
+        ".group-btn"
+    );
+
+    if(!groups.length) return;
+
+    selectedGroup+=dir;
+
+    if(selectedGroup<0)
+        selectedGroup=
+        groups.length-1;
+
+    if(
+        selectedGroup>=
+        groups.length
+    ){
+        selectedGroup=0;
+    }
+
+    groups[selectedGroup].click();
+
+    setTimeout(()=>{
+
+        focusItem(0);
+
+    },200);
+}
+
+document.addEventListener(
+"keydown",
+function(e){
+
+    switch(e.keyCode){
+
+        case 38:
+            focusItem(
+                selectedIndex-1
+            );
+            break;
+
+        case 40:
+            focusItem(
+                selectedIndex+1
+            );
+            break;
+
+        case 37:
+            changeGroup(-1);
+            break;
+
+        case 39:
+            changeGroup(1);
+            break;
+
+        case 13:
+
+            const items=
+            document.querySelectorAll(
+                ".item"
+            );
+
+            if(
+                items[selectedIndex]
+            ){
+
+                items[
+                    selectedIndex
+                ].click();
+            }
+
+            break;
+
+        case 166:
+
+            focusItem(
+                selectedIndex+1
+            );
+
+            const up=
+            document.querySelectorAll(
+                ".item"
+            );
+
+            if(up[selectedIndex])
+                up[selectedIndex]
+                .click();
+
+            break;
+
+        case 167:
+
+            focusItem(
+                selectedIndex-1
+            );
+
+            const down=
+            document.querySelectorAll(
+                ".item"
+            );
+
+            if(down[selectedIndex])
+                down[selectedIndex]
+                .click();
+
+            break;
+    }
+});
 </body>
 
 </html>
