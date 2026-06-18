@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPTV Player - Android TV + MPD DRM</title>
+
+<!-- เครื่องเล่นวิดีโอและไลบรารีเสริม -->
+<script src="https://jwpcdn.com"></script>
+<script>jwplayer.key = "XSuP4qMl+9tK17QNb+4+th2Pm9AWgMO/cYH8CI0HGGr7bdjo";</script>
+<script src="https://jsdelivr.net"></script>
+<!-- เพิ่ม dash.js สำหรับเล่นไฟล์ MPD DRM -->
+<script src="https://jsdelivr.net"></script>
+
+<style>
+body{
+    margin:0;
+    padding:20px;
+    background:#111;
+    color:#fff;
+    font-family:Arial,sans-serif;
+    /* ซ่อนแถบเลื่อนเพื่อให้เหมาะกับหน้าจอทีวี */
+    overflow-y: hidden; 
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+    height: 95vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.player-wrapper{
+    width:100%;
+    position:relative;
+    padding-top:56.25%;
+    background:#000;
+    border-radius:10px;
+    overflow:hidden;
+    flex-shrink: 0;
+}
+
+#player,
+#fallbackVideo{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+}
+
+#fallbackVideo{
+    background:#000;
+    object-fit:contain;
+}
+
+.current{
+    padding:10px 0;
+    font-size:20px;
+    font-weight:bold;
+    color:#00ff88;
+    flex-shrink: 0;
+}
+
+.groups{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    margin:10px 0;
+    padding-bottom:5px;
+    flex-shrink: 0;
+}
+
+/* ซ่อน Scrollbar ของหมวดหมู่ */
+.groups::-webkit-scrollbar { display: none; }
+
+.group-btn{
+    border:3px solid transparent;
+    padding:10px 16px;
+    border-radius:20px;
+    background:#222;
+    color:#fff;
+    cursor:pointer;
+    white-space:nowrap;
+    outline: none;
+}
+
+.group-btn.active{
+    background:#00ff88;
+    color:#000;
+    font-weight:bold;
+}
+
+/* สถานะเมื่อรีโมทเลื่อนมาโฟกัสหมวดหมู่ */
+.group-btn:focus, .group-btn.tv-focus{
+    border-color: #fff !important;
+    background: #444;
+    box-shadow: 0 0 10px #fff;
+}
+.group-btn.active:focus, .group-btn.active.tv-focus{
+    border-color: #fff !important;
+    background:#00ff88;
+}
+
+.playlist-wrapper {
+    flex-grow: 1;
+    overflow-y: auto;
+    background:#1c1c1c;
+    border-radius:10px;
+}
+/* ซ่อน Scrollbar ของรายการช่อง */
+.playlist-wrapper::-webkit-scrollbar { display: none; }
+
+.playlist{
+    display: flex;
+    flex-direction: column;
+}
+
+.item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    cursor:pointer;
+    border-bottom:1px solid #333;
+    border-left: 5px solid transparent;
+    outline: none;
+}
+
+.item:hover{
+    background:#2a2a2a;
+}
+
+/* สถานะเมื่อรีโมทเลื่อนมาโฟกัสที่ช่อง */
+.item:focus, .item.tv-focus{
+    background: #333 !important;
+    border-left-color: #ffffff !important;
+    box-shadow: inset 0 0 5px rgba(255,255,255,0.2);
+}
+
+.item img{
+    width:60px;
+    height:60px;
+    object-fit:contain;
+    background:#fff;
+    border-radius:6px;
+}
+
+.active-channel{
+    background:#004d33 !important;
+    border-left-color: #00ff88 !important;
+}
+
+video{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="player-wrapper">
+    <div id="player"></div>
+
+    <video
+        id="fallbackVideo"
+        controls
+        autoplay
+        playsinline
+        preload="auto"
+        style="display:none">
+    </video>
+</div>
+
+<div id="current" class="current">
+เลือกช่องเพื่อเริ่มเล่น (ใช้รีโมท ขึ้น/ลง/ซ้าย/ขวา และตกลง)
+</div>
+
+<div id="groups" class="groups"></div>
+
+<div class="playlist-wrapper" id="playlistWrapper">
+    <div id="playlist" class="playlist"></div>
+</div>
+
+</div>
+
+<script>
+
+// =========================
+// PLAYLIST (รองรับโครงสร้าง MPD + DRM)
+// =========================
+
+const m3uData = `
+#EXTINF:-1 group-title="ช่องดิจิตอล" tvg-logo="https://ais-vidnt.com",CH3 HD
+https://sky-cdn.com
+
+#EXTINF:-1 group-title="ช่องดิจิตอล" tvg-logo="https://ais-vidnt.com",CH5 HD
+https://sky-cdn.com
+
+#EXTINF:-1 group-title="🎞️ หนังภาพยนตร์" tvg-logo="https://jtvnw.net",RED BULL TV
+https://akamaized.net
+
+#EXTINF:-1 group-title="Newsข่าว" tvg-logo="https://imgur.com",Top News
+https://topnews.co.th
+
+#EXTINF:-1 group-title="สารคดี" tvg-logo="https://placeholder.com",Fishing Tv
+https://frequency.stream
+
+#EXTINF:-1 group-title="🔒 ช่อง DRM (ตัวอย่าง)" tvg-logo="https://placeholder.com" kid="ตรึงค่า KeyID ตรงนี้" key="ตรึงค่า Key ตรงนี้",ช่องทดสอบ MPD DRM
+http://ตัวอย่างลิงก์/stream.mpd
+`;
+
+// =========================
+
+const playlist=document.getElementById("playlist");
+const playlistWrapper=document.getElementById("playlistWrapper");
+const current=document.getElementById("current");
+const fallbackVideo=document.getElementById("fallbackVideo");
+const groupsContainer=document.getElementById("groups");
+
+let channels=[];
+let displayedChannels=[]; // เก็บช่องที่กำลังแสดงผลตามหมวดหมู่จริง
+let jw=null;
+let hls=null;
+let dashPlayer=null; // สำหรับจัดการเครื่องเล่น MPD
+let currentChannel=null;
+
+// ตัวแปรควบคุมระบบโฟกัสของ Android TV
+let focusArea = "playlist"; // "groups" หรือ "playlist"
+let activeGroupIndex = 0;
+let activeChannelIndex = 0;
+
+// =========================
+// PARSE M3U (เพิ่มตัวจับค่า DRM)
+// =========================
+
+function parseM3U(text){
+    const lines=text.split("\n");
+    const result=[];
+    
+    let name="";
+    let logo="";
+    let group="อื่นๆ";
+    let drm=false;
+    let keyId="";
+    let key="";
+
+    for(const line of lines){
+        const l=line.trim();
+        if(!l) continue;
+
+        if(l.startsWith("#EXTINF")){
+            const g=l.match(/group-title="([^"]+)"/);
+            const lg=l.match(/tvg-logo="([^"]+)"/);
+            
+            // ตรวจจับค่า KeyID และ Key จากแท็กในบรรทัด M3U (ถ้ามี)
+            const kidMatch=l.match(/kid="([^"]+)"/);
+            const keyMatch=l.match(/key="([^"]+)"/);
+
+            group=g ? g[1] : "อื่นๆ";
+            logo=lg ? lg[1] : "";
+            keyId=kidMatch ? kidMatch[1] : "";
+            key=keyMatch ? keyMatch[1] : "";
+            drm=(keyId !== "" && key !== "");
+
+            name=l.split(",").pop().trim();
+        }
+        else if(l.startsWith("http")){
+            // หากไม่มีค่าคีย์ในบรรทัด แต่อยากให้เช็กจากนามสกุลไฟล์อัตโนมัติ
+            if(l.toLowerCase().includes(".mpd") && !keyId) {
+                drm = true; 
+            }
+
+            result.push({
+                name: name || "Unknown Channel",
+                logo,
+                group,
+                url:l,
+                drm,
+                keyId,
+                key
+            });
+            // Reset ตัวแปรชั่วคราว
+            name=""; logo=""; drm=false; keyId=""; key="";
+        }
+    }
+    return result;
+}
+
+// =========================
+// ล้างการทำงานเครื่องเล่นวิดีโอทั้งหมด
+// =========================
+function resetPlayers() {
+    if(jw) { try{ jw.stop(); }catch(e){} }
+    if(hls){ hls.destroy(); hls=null; }
+    if(dashPlayer){ dashPlayer.destroy(); dashPlayer=null; }
+    
+    fallbackVideo.pause();
+    fallbackVideo.removeAttribute("src");
+    fallbackVideo.load();
+}
+
+// =========================
+// PLAY CHANNEL (ไฮบริดรองรับ HLS/JW/MPD DRM)
+// =========================
+
+function playChannel(channel){
+    currentChannel=channel;
+    localStorage.setItem("lastChannel", JSON.stringify(channel));
+    current.textContent="กำลังเล่น : "+channel.name;
+
+    // ไฮไลต์ช่องที่กำลังเล่นในปัจจุบัน
+    document.querySelectorAll(".item").forEach(el=>el.classList.remove("active-channel"));
+    const active=document.querySelector(`[data-url="${channel.url}"]`);
+    if(active) active.classList.add("active-channel");
+
+    resetPlayers();
+
+    const url=channel.url.toLowerCase();
+
+    // 1. ตรวจสอบเงื่อนไขว่าเป็นไฟล์ MPD หรือมี DRM ระบบจะใช้ dash.js ทันที
+    if(url.includes(".mpd") || channel.drm){
+        document.getElementById("player").style.display="none";
+        fallbackVideo.style.display="block";
+
+        dashPlayer = dashjs.MediaPlayer().create();
+        dashPlayer.initialize(fallbackVideo, channel.url, true);
+
+        // หากตรวจพบว่ามีค่า Key ป้องกันระบบ DRM ClearKey จะทำการส่งรหัสไปปลดล็อกไฟล์
+        if(channel.keyId && channel.key) {
+            const protectionData = {
+                "org.w3.clearkey": {
+                    "clearkeys": {
+                        [channel.keyId]: channel.key
+                    }
+                }
+            };
+            dashPlayer.setProtectionData(protectionData);
+        }
+    }
+    // 2. ถ้าเป็นไฟล์ .m3u8 (HLS) ทั่วไป ให้ใช้ hls.js เล่นผ่านวิดีโอสตรีม
+    else if(url.includes(".m3u8")){
+        document.getElementById("player").style.display="none";
+        fallbackVideo.style.display="block";
+
+        if(Hls.isSupported()){
+            hls=new Hls({ enableWorker:true, lowLatencyMode:true });
+            hls.loadSource(channel.url);
+            hls.attachMedia(fallbackVideo);
+            hls.on(Hls.Events.MANIFEST_PARSED,()=>{
+                fallbackVideo.play().catch(()=>{});
+            });
+        }
+        else if(fallbackVideo.canPlayType("application/vnd.apple.mpegurl")){
+            fallbackVideo.src=channel.url;
+            fallbackVideo.play().catch(()=>{});
+        }
+    }
+    // 3. รูปแบบอื่นๆ ปล่อยให้ JW Player จัดการตามค่าปกติ
+    else {
+        document.getElementById("player").style.display="block";
+        fallbackVideo.style.display="none";
+
+        try{
+            if(!jw){
+                jw=jwplayer("player").setup({
+                    file:channel.url,
+                    width:"100%",
+                    aspectratio:"16:9",
+                    autostart:true
+});}else{jw.load([{ file:channel.url }]);jw.play(true);}}catch(e){console.log("JW Error:", e);}}}// =========================// RENDER LIST & GROUPS// =========================function renderList(list){playlist.innerHTML="";displayedChannels = list; // อัปเดตรายการช่องที่เปิดอยู่จริงสำหรับรีโมทlist.forEach((ch, idx)=>{const div=document.createElement("div");div.className="item";div.tabIndex = "-1"; // เพื่อให้จัดการโฟกัสผ่าน JS บนทีวีได้ง่ายขึ้นdiv.dataset.url=ch.url;div.dataset.index = idx;if(currentChannel && currentChannel.url === ch.url){div.className += " active-channel";activeChannelIndex = idx; // จำตำแหน่งช่องปัจจุบันไว้}div.innerHTML=<img src="${ch.logo}" onerror="this.src='https://placeholder.com'"> <div> <div style="font-weight:bold;">${ch.name}</div> <div style="font-size:12px; color:#aaa; margin-top:4px;">${ch.group}</div> </div>;div.addEventListener("click", () => {activeChannelIndex = idx;focusArea = "playlist";updateTVFocus();playChannel(ch);});playlist.appendChild(div);});}function renderGroups(){groupsContainer.innerHTML = "";const categories = ["ทั้งหมด", ...new Set(channels.map(ch => ch.group))];categories.forEach((cat, index) => {const btn = document.createElement("button");btn.className = "group-btn" + (index === 0 ? " active" : "");btn.textContent = cat;btn.dataset.index = index;btn.addEventListener("click", () => {activeGroupIndex = index;focusArea = "groups";updateTVFocus();switchGroup(cat, btn);});groupsContainer.appendChild(btn);});}function switchGroup(cat, btnElement) {document.querySelectorAll(".group-btn").forEach(b => b.classList.remove("active"));btnElement.classList.add("active");if(cat === "ทั้งหมด"){renderList(channels);} else {const filtered = channels.filter(ch => ch.group === cat);renderList(filtered);}activeChannelIndex = 0; // รีเซ็ตตัวชี้ช่องไปที่ช่องแรกสุดของหมวดหมู่ใหม่}// =========================// ระบบควบคุมผ่านรีโมท (ANDROID TV NAVIGATION)// =========================function updateTVFocus() {// ลบคลาสโฟกัสเก่าออกทั้งหมดก่อนdocument.querySelectorAll(".tv-focus").forEach(el => el.classList.remove("tv-focus"));if (focusArea === "groups") {const groupButtons = document.querySelectorAll(".group-btn");if(groupButtons[activeGroupIndex]) {groupButtons[activeGroupIndex].classList.add("tv-focus");groupButtons[activeGroupIndex].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });}} else if (focusArea === "playlist") {const channelItems = document.querySelectorAll(".item");if(channelItems[activeChannelIndex]) {channelItems[activeChannelIndex].classList.add("tv-focus");// เลื่อนหน้าจอให้ช่องที่เลือกมาอยู่ตรงกลางสายตาบนหน้าจอทีวีchannelItems[activeChannelIndex].scrollIntoView({ behavior: "smooth", block: "nearest" });}}}// ดักฟังคำสั่งการกดปุ่มจากรีโมทwindow.addEventListener("keydown", (e) => {const groupButtons = document.querySelectorAll(".group-btn");const channelItems = document.querySelectorAll(".item");// ตรวจสอบรหัสปุ่มมาตรฐานของ Android TV D-Padswitch (e.keyCode) {case 37: // รีโมทกด : ซ้ายif (focusArea === "groups") {if (activeGroupIndex > 0) activeGroupIndex--;} else {// หากอยู่ที่แถวช่องสตรีมแล้วกดซ้าย ให้เด้งโฟกัสกลับขึ้นไปเลือกหมวดหมู่ด้านบนแทนfocusArea = "groups";}updateTVFocus();e.preventDefault();break;case 39: // รีโมทกด : ขวาif (focusArea === "groups") {if (activeGroupIndex < groupButtons.length - 1) activeGroupIndex++;}updateTVFocus();e.preventDefault();break;case 38: // รีโมทกด : ขึ้นif (focusArea === "playlist") {if (activeChannelIndex > 0) {activeChannelIndex--;} else {// หากอยู่ที่ช่องแรกสุดแล้วกดขึ้น ให้เด้งกลับไปเลือกหมวดหมู่ด้านบนfocusArea = "groups";}}updateTVFocus();e.preventDefault();break;case 40: // รีโมทกด : ลงif (focusArea === "groups") {// หากอยู่แถวหมวดหมู่ด้านบนแล้วกดลง ให้ย้ายลงมาเลือกช่องรายการตัวแรกif(channelItems.length > 0) {focusArea = "playlist";}} else if (focusArea === "playlist") {if (activeChannelIndex < channelItems.length - 1) activeChannelIndex++;}updateTVFocus();e.preventDefault();break;case 13: // รีโมทกด : ตกลง (OK / Enter / Center Click)if (focusArea === "groups") {if(groupButtons[activeGroupIndex]) groupButtons[activeGroupIndex].click();} else if (focusArea === "playlist") {if(displayedChannels[activeChannelIndex]) {playChannel(displayedChannels[activeChannelIndex]);}}e.preventDefault();break;case 8: // รีโมทกด : ปุ่มย้อนกลับ (Back)// ย้ายโฟกัสกลับไปที่หมวดหมู่เพื่อความปลอดภัยหรือออกจากรายการif(focusArea === "playlist") {focusArea = "groups";updateTVFocus();e.preventDefault();}break;}// ฟีเจอร์แถม: หากกดเลข 0-9 บนรีโมททีวี จะสลับไปยังลำดับช่องนั้นๆ โดยอัตโนมัติif (e.keyCode >= 48 && e.keyCode <= 57) {const num = e.keyCode - 48;const targetIndex = num === 0 ? 9 : num - 1; // กด 1 ได้ช่องแรก, กด 0 ได้ช่องที่ 10if(displayedChannels[targetIndex]) {activeChannelIndex = targetIndex;focusArea = "playlist";updateTVFocus();playChannel(displayedChannels[targetIndex]);}}});// =========================// INITIALIZATION// =========================window.addEventListener("DOMContentLoaded", () => {channels = parseM3U(m3uData);renderGroups();renderList(channels);// ตรวจสอบคุกกี้เพื่อเล่นช่องล่าสุดค้างไว้const savedChannel = localStorage.getItem("lastChannel");if(savedChannel){try {const parsed = JSON.parse(savedChannel);// หา Index ของช่องล่าสุดเพื่อจับคู่ตำแหน่งโฟกัสเริ่มต้นบนหน้าจอทีวีconst matchIndex = displayedChannels.findIndex(ch => ch.url === parsed.url);if(matchIndex !== -1) activeChannelIndex = matchIndex;playChannel(parsed);} catch(e) {localStorage.removeItem("lastChannel");}}// ตั้งค่าโฟกัสแรกเริ่มให้อยู่ที่หมวดหมู่หลักตอนเปิดแอปฯ ขึ้นมาsetTimeout(updateTVFocus, 500);});
+
+</script>
+
+</body>
+
+</html>
