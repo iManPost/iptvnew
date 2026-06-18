@@ -190,20 +190,41 @@ video{
 // ==========================================
 
 const m3uData = `
-#EXTINF:-1 group-title="ช่องดิจิตอล" tvg-logo="https://ais-vidnt.com",CH3 HD
-https://sky-cdn.com
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/LOGO3HD.PNG",CH3 HD
+https://lb-gmmz.sky-cdn.com/gmm/ch3.m3u8
+#EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://58-64-52-73-rewriter.ais-vidnt.com/ais/play/origin/LIVE//channelicon//ch5new.logo.png",CH5 HD
+https://lb-gmmz.sky-cdn.com/gmm/ch5.m3u8
 
-#EXTINF:-1 group-title="ช่องดิจิตอล" tvg-logo="https://ais-vidnt.com",CH5 HD
-https://sky-cdn.com
 
-#EXTINF:-1 group-title="🎞️ หนังภาพยนตร์" tvg-logo="https://jtvnw.net",RED BULL TV
-https://akamaized.net
 
-#EXTINF:-1 group-title="Newsข่าว" tvg-logo="https://imgur.com",Top News
-https://topnews.co.th
 
-#EXTINF:-1 group-title="สารคดี" tvg-logo="https://placeholder.com",Fishing Tv
-https://frequency.stream
+#####################################################################################
+
+#EXTINF:-1 tvg-id="" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/R_0148.png" group-title="🎞️ หนังภาพยนตร์",HBO
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36
+#EXTVLCOPT:http-origin=http://ultratv.one:2095/live
+#EXTVLCOPT:http-referrer=http://ultratv.one:2095/live/
+http://ultratv.one:2095/live/hCPtsREFtA/Xj25tg0ZXi/115704.m3u8
+
+#EXTINF:-1 group-title="🎞️ หนังภาพยนตร์" tvg-logo="https://static-cdn.jtvnw.net/jtv_user_pictures/cd0c92a3-96d1-411b-90c5-ac3f29d86485-profile_image-300x300.png",RED BULL TV
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Linux; Android 7.1.2; TV BOX Build/NHG47L) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36
+#EXTVLCOPT:http-referrer=https://freetvdd.com/
+https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master_3360.m3u8
+
+
+#################################################################################
+#EXTINF:-1 group-title="Newsข่าว" tvg-logo="https://i.imgur.com/tRFnV9M.png",Top News
+https://live.topnews.co.th/hls/topnews_a_720.m3u8
+#EXTINF:-1 group-title="Newsข่าว" tvg-logo="https://i.imgur.com/h3TY38F.png",Nation TV
+https://lb-gmmz.sky-cdn.com/gmm/nation.m3u8
+
+
+#################################################################################
+
+#EXTINF:-1 group-title="สารคดี",Fishing Tv
+https://amg00793-bbcstudios-amg00793c3-lg-us-2528.playouts.now.amagi.tv/playlist/amg00793-bbcstudios-bbcearta-lgus/playlist.m3u8
+#EXTINF:-1 group-title="สารคดี",Fishing Tv
+https://linear-80.frequency.stream/dist/localnow/80/hls/master/playlist.m3u8
 
 #EXTINF:-1 group-title="🔒 ช่อง DRM" tvg-logo="https://placeholder.com" kid="ใส่ค่า KeyID ของคุณตรงนี้" key="ใส่ค่า Key ของคุณตรงนี้",ตัวอย่างช่อง MPD DRM (ClearKey)
 http://ตัวอย่างลิงก์สตรีมมิ่ง/manifest.mpd
