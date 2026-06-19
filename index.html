@@ -131,9 +131,6 @@ video{
     height:100%;
     object-fit:contain;
 }
-    .player-wrapper.tv-focus{
-    border:4px solid #00ff88;
-}
 </style>
 </head>
 <p style="text-align: center;">⚽ PLAYLIST TV 🚩 </p>
@@ -775,7 +772,7 @@ let channels=[];
 let jw=null;
 let hls=null;
 let currentChannel=null;
-let focusArea="list";
+
 // =========================
 // PARSE M3U
 // =========================
@@ -1019,7 +1016,6 @@ function playChannel(channel){
     else{
 
         playJW(channel);
-        focusPlayer();
     }
 }
 
@@ -1156,23 +1152,34 @@ if(saved){
 let selectedIndex=0;
 let selectedGroup=0;
 
-function focusPlayer(){
+function focusItem(index){
 
-    focusArea="player";
+    const items=document.querySelectorAll(".item");
 
-    document
-    .querySelectorAll(".item")
-    .forEach(el=>{
+    if(!items.length) return;
 
+    if(index<0){
+        index=0;
+    }
+
+    if(index>=items.length){
+        index=items.length-1;
+    }
+
+    items.forEach(el=>{
         el.classList.remove("tv-focus");
-
     });
 
-    document
-    .querySelector(".player-wrapper")
-    .classList
-    .add("tv-focus");
+    selectedIndex=index;
 
+    items[index].classList.add("tv-focus");
+
+    items[index].focus();
+
+    items[index].scrollIntoView({
+        block:"nearest",
+        behavior:"smooth"
+    });
 }
 
 function changeGroup(dir){
@@ -1215,84 +1222,71 @@ document.addEventListener("keydown",(e)=>{
         case 38: // UP
 
             e.preventDefault();
+            e.stopPropagation();
 
-            if(focusArea==="list"){
-
-                if(selectedIndex===0){
-
-                    focusPlayer();
-
-                }else{
-
-                    focusItem(selectedIndex-1);
-
-                }
-
-            }
-
-            break;
+            focusItem(selectedIndex-1);
+            return false;
 
         case 40: // DOWN
 
             e.preventDefault();
+            e.stopPropagation();
 
-            if(focusArea==="player"){
+            focusItem(selectedIndex+1);
+            return false;
 
-                focusArea="list";
-
-                document
-                .querySelector(".player-wrapper")
-                .classList
-                .remove("tv-focus");
-
-                focusItem(0);
-
-            }else{
-
-                focusItem(selectedIndex+1);
-
-            }
-
-            break;
-
-        case 37:
-
-            if(focusArea==="list"){
-
-                e.preventDefault();
-
-                changeGroup(-1);
-
-            }
-
-            break;
-
-        case 39:
-
-            if(focusArea==="list"){
-
-                e.preventDefault();
-
-                changeGroup(1);
-
-            }
-
-            break;
-
-        case 13:
+        case 37: // LEFT
 
             e.preventDefault();
+            e.stopPropagation();
 
-            if(
-                focusArea==="list" &&
-                items[selectedIndex]
-            ){
+            changeGroup(-1);
+            return false;
 
+        case 39: // RIGHT
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            changeGroup(1);
+            return false;
+
+        case 13: // OK
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            if(items[selectedIndex]){
                 items[selectedIndex].click();
-
             }
 
-            break;
+            return false;
+
+        case 166: // CH+
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            focusItem(selectedIndex+1);
+
+            if(items[selectedIndex]){
+                items[selectedIndex].click();
+            }
+
+            return false;
+
+        case 167: // CH-
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            focusItem(selectedIndex-1);
+
+            if(items[selectedIndex]){
+                items[selectedIndex].click();
+            }
+
+            return false;
     }
 
 });
