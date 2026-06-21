@@ -5,20 +5,98 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>- JW + HLS mpd</title>
     <!-- นำโค้ดscriptบล๊อกMacมาวางตรงนี้ -->
+    <!-- นำโค้ดscriptบล๊อกMacมาวางตรงนี้ -->
 <script>
-    const _0x1a = {
-        // ตัวอย่างรหัสที่ได้มาจากเว็บ base64encode.org
-        p: atob("YUhSMGNEb3ZMMnd1YkdVdVkyOXQ="), // ค่า PORTAL_URL ที่แปลงแล้ว
-        m: atob("TURBNk1VRTZNa0k2TTBNeU9VUT0=")   // ค่า MAC_ADDRESS ที่แปลงแล้ว
-    };
+/* ==========================
+   ข้อมูลต้นฉบับ
+========================== */
 
-    // โค้ดส่วนดักจับคลิกขวา และ F12 (วางต่อท้ายได้เลย)
-    document.addEventListener('contextmenu', event => event.preventDefault());
-    document.onkeydown = function(e) {
-        if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0))) || (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0))) {
-            return false;
-        }
-    };
+const PORTAL_URL = "https://imanpost.github.io/iptvnew/";
+const MAC_ADDRESS = "00:11:22:33:44:55";
+
+/* ==========================
+   แปลงเป็น Base64
+========================== */
+
+const URL_BASE64 = btoa(YUhSMGNEb3ZMMmx2ZFhKeWIzSjBZV3N1WTI5dA==);
+const MAC_BASE64 = btoa(MDA6MUE6MkI6M0M6NEQ6NUU=);
+
+        console.log(_0x1a.p); 
+        console.log(_0x1a.m);
+
+/* ==========================
+   ถอดรหัสกลับเมื่อใช้งาน
+========================== */
+
+const CONFIG = {
+    p: atob(YUhSMGNEb3ZMMnd1YkdVdVkyOXQ=),
+    m: atob(TURBNk1VRTZNa0k2TTBNeU9VUT0=)
+};
+
+console.log(CONFIG);
+
+/* ==========================
+   ป้องกันคลิกขวา
+========================== */
+
+document.addEventListener("contextmenu", function(e) {
+    e.preventDefault();
+});
+
+/* ==========================
+   ป้องกัน F12 และคีย์ลัด DevTools
+========================== */
+
+document.addEventListener("keydown", function(e) {
+
+    if (
+        e.key === "F12" ||
+
+        (e.ctrlKey && e.shiftKey &&
+            ["I", "J", "C"].includes(e.key.toUpperCase())
+        ) ||
+
+        (e.ctrlKey &&
+            e.key.toUpperCase() === "U"
+        )
+    ) {
+        e.preventDefault();
+        return false;
+    }
+
+});
+
+/* ==========================
+   ตรวจจับ DevTools เปิด
+========================== */
+
+setInterval(function() {
+
+    const widthThreshold =
+        window.outerWidth - window.innerWidth > 160;
+
+    const heightThreshold =
+        window.outerHeight - window.innerHeight > 160;
+
+    if (widthThreshold || heightThreshold) {
+
+        document.body.innerHTML = `
+            <div style="
+                display:flex;
+                justify-content:center;
+                align-items:center;
+                height:100vh;
+                font-size:24px;
+                font-family:sans-serif;
+            ">
+                Access Denied
+            </div>
+        `;
+
+    }
+
+}, 1000);
+</script>
 <script src="https://ssl.p.jwpcdn.com/player/v/8.26.0/jwplayer.js"></script>
 <script>
 jwplayer.key = "XSuP4qMl+9tK17QNb+4+th2Pm9AWgMO/cYH8CI0HGGr7bdjo";
@@ -150,7 +228,7 @@ video{
 }
 </style>
 </head>
-<p style="text-align: center;">⚽ PLAYLIST TV 🚩 >>> เลื่อนขึ้นลง ตัวเล่นวีดีโอ รีโมทกล่อง AndroidTV ปุ่ม CH ↨. เต็มจอ เมาส์กด </p>
+<p style="text-align: center;">🚩 >>> เลื่อนขึ้นลง ตัวเล่นวีดีโอ รีโมทกล่อง AndroidTV ปุ่ม CH ↨. เต็มจอ เมาส์กด </p>
 <body>
 
 <div class="container">
@@ -1922,7 +2000,7 @@ setTimeout(()=>{
 </script>
 
 </body>
-<p style="text-align: center;"> แอพทดลอง! Beta1 จัดทำขึ้นเพื่อความบันเทิง.ภายในครอบครัว.เท่านั้น @ ไม่ได้จำหน่าย By NETI กลุ่ม Android ' Box TV Thai  </p> 
+<p style="text-align: center;"> แอพทดลอง! Beta1 จัดทำขึ้นเพื่อความบันเทิง.ภายในครอบครัว.เท่านั้น @ ไม่ได้จำหน่าย By .NETI. กลุ่ม .Android ' Box TV Thai  </p> 
     <!-----starthit --ใส่---->
     <script type="text/javascript" src="https://www.free-counters.org/count/k3fk"></script><br>
  <a href='http://xn--besucherzhlerkostenlos-84b.com/'>http://besucherzählerkostenlos.com/</a> <script type='text/javascript' src='https://whomania.com/ctr?id=e72bcbe0618f5b0b716d508faee318333b4d2fe8'></script>
