@@ -1,1 +1,66 @@
-ERROR 404
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>History Channel</title>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+body{
+    margin:0;
+    background:#000;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+video{
+    width:100%;
+    max-width:1200px;
+    height:auto;
+    background:#000;
+}
+</style>
+</head>
+<body>
+
+<video id="video" controls autoplay playsinline></video>
+
+<script>
+const video = document.getElementById('video');
+
+const streamUrl =
+'http://54.37.19.157/history/tracks-v1a1/mono.m3u8';
+
+if (Hls.isSupported()) {
+
+    const hls = new Hls({
+        xhrSetup: function(xhr) {
+            xhr.setRequestHeader(
+                'User-Agent',
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'
+            );
+        }
+    });
+
+    hls.loadSource(streamUrl);
+    hls.attachMedia(video);
+
+    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+        video.play();
+    });
+
+} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+
+    video.src = streamUrl;
+    video.addEventListener('loadedmetadata', function() {
+        video.play();
+    });
+
+}
+</script>
+
+</body>
+</html>
