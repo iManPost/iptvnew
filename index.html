@@ -1,31 +1,57 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <title>IPTV Player</title>
-    <!-- โหลดสไตล์และสคริปต์ของ DPlayer และ hls.js -->
-    <link rel="stylesheet" href="https://jsdelivr.net">
-    <script src="https://jsdelivr.net"></script>
-    <script src="https://jsdelivr.net"></script>
-    <style>
-        body { margin: 0; background: #111; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        #dplayer { width: 100%; max-width: 850px; height: 480px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>History Channel Player</title>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+body{
+    margin:0;
+    background:#000;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+video{
+    width:100%;
+    max-width:1200px;
+    height:auto;
+    background:#000;
+}
+</style>
 </head>
 <body>
 
-    <div id="dplayer"></div>
+<video id="video" controls autoplay playsinline></video>
 
-    <script>
-        // ใช้โปรแกรมเล่นวิดีโอแบบสากลที่ข้าม CORS และจำลอง User-Agent อัตโนมัติ
-        const dp = new DPlayer({
-            container: document.getElementById('dplayer'),
-            autoplay: true,
-            video: {
-                url: 'http://54.37.19',
-                type: 'hls'
-            }
-        });
-    </script>
+<script>
+const video = document.getElementById('video');
+const videoSrc = 'http://54.37.19.157/history/tracks-v1a1/mono.m3u8';
+
+if (Hls.isSupported()) {
+    const hls = new Hls();
+    hls.loadSource(videoSrc);
+    hls.attachMedia(video);
+
+    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+        video.play();
+    });
+
+    hls.on(Hls.Events.ERROR, function(event, data) {
+        console.log('HLS Error:', data);
+    });
+
+} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = videoSrc;
+    video.addEventListener('loadedmetadata', function() {
+        video.play();
+    });
+}
+</script>
+
 </body>
 </html>
