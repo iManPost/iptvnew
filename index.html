@@ -1,46 +1,66 @@
-<html><head><meta name="viewport" content="width=device-width"></head><body><video controls="" autoplay="" name="media"><source src="http://54.37.19.157/history/tracks-v1a1/mono.m3u8" type="application/vnd.apple.mpegurl"></video><div id="m3u8Layer" style="display: inline;"><!-- overlay.html -->
-<div id="m3u8OverlayDiv" class="overlayDiv" style="display: inline; min-width: 12px; right: 0px;"> 
-    <span id="titleSpan" class="titleSpan" style="padding-left:6px;">
-        <a id="titleM3u8Link" target="_self" href="http://54.37.19.157/history/tracks-v1a1/mono.m3u8" class="m3u8Link" title="http://54.37.19.157/history/tracks-v1a1/mono.m3u8">
-            <span id="titleText">m3u8</span>
-            <span style="padding-right:3px;">[<span id="tabM3u8Count">5</span>]</span></a></span>
-    
-    <span id="m3u8LinkSpan" style="display:none;" title="Show First / Last m3u8 video link (Alt Shift F / L)">
-        <select id="showFirstLast" class="overlayDD">
-            <option class="overlayDD" value="first" selected="">First</option>
-            <option class="overlayDD" value="last">Last</option>
-        </select>&nbsp;
-        <a id="m3u8Link" target="_self" href="http://54.37.19.157/history/tracks-v1a1/mono.m3u8" class="m3u8Link" title="Click or right click to open the m3u8 URL (Alt Enter)">
-            <span id="m3u8LinkText" class="m3u8Link">http://54.37.19.157/history/tracks-v1a1/mono.m3u8</span>
-        </a>&nbsp;
-    </span>
-    <span class="buttonsSpan noWrap" style="white-space:nowrap;">
-        <span id="m3u8HideSpan" style="margin-left:2px;margin-right:0px;">
-            <span id="m3u8HideButton" class="olButton" title="Shrink the overlay to the upper right corner (Alt &lt;)" style="display: inline;">
-                &nbsp;&nbsp;&nbsp;&lt;&nbsp;&nbsp;
-            </span>
-        </span>
-        <span id="m3u8ExpandOverlay" class="olButton noWrap" title="Expand to show full overlay details (Alt +)" style="display: inline;">
-            &nbsp;&nbsp;&nbsp;+&nbsp;&nbsp;
-        </span>
-        <span id="m3u8CopyButton" class="olButton noWrap" title="Copy the m3u8 URL to the clipboard (Alt C)">
-            &nbsp;&nbsp;Copy&nbsp;
-        </span>
-<!--
-        <span id="m3u8PlayButton" class="olButton noWrap"
-            title="Play the m3u8 video in the current tab (Alt P)">
-            &nbsp;&nbsp;Play&nbsp;
-        </span>
--->
-        <span id="m3u8PlayButton" class="olButton noWrap" title="Play the m3u8 video in the current tab (Alt P, can use Ctrl or Shift for new tab/window)">
-            <a id="m3u8PlayLink" href="chrome-extension://akkncdpkjlfanomlnpmmolafofpnpjgn/player/player.html#http://54.37.19.157/history/tracks-v1a1/mono.m3u8" class="cssbutton" style="color:white;text-decoration:none;">
-                &nbsp;&nbsp;Play&nbsp;
-            </a>
-        </span>
-        <span id="m3u8CloseButton" class="olButton hoverRed noWrap" title="Close the m3u8 overlay for this page (Alt X)">
-            &nbsp;&nbsp;X&nbsp;&nbsp;</span><span id="m3u8HideRightButton" class="olButton noWrap" title="Shrink the overlay to the upper right corner (Alt &gt;)" style="display: none;">
-            &nbsp;&nbsp;&gt;&nbsp;&nbsp;&nbsp;
-        </span>
-    </span><br>
-</div>
-</div></body></html>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>History Channel</title>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+body{
+    margin:0;
+    background:#000;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+video{
+    width:100%;
+    max-width:1200px;
+    height:auto;
+    background:#000;
+}
+</style>
+</head>
+<body>
+
+<video id="video" controls autoplay playsinline></video>
+
+<script>
+const video = document.getElementById('video');
+
+const streamUrl =
+'https://new2.iveenvon.workers.dev/?url=http://54.37.19.157/history/tracks-v1a1/mono.m3u8';
+
+if (Hls.isSupported()) {
+
+    const hls = new Hls({
+        xhrSetup: function(xhr) {
+            xhr.setRequestHeader(
+                'User-Agent',
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'
+            );
+        }
+    });
+
+    hls.loadSource(streamUrl);
+    hls.attachMedia(video);
+
+    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+        video.play();
+    });
+
+} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+
+    video.src = streamUrl;
+    video.addEventListener('loadedmetadata', function() {
+        video.play();
+    });
+
+}
+</script>
+
+</body>
+</html>
