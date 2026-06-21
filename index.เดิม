@@ -163,66 +163,7 @@ https://udn-streamer1.cdn.3bbtv.com:8443/3bb/live/32/32.mpd
 #EXTINF:-1 group-title="️ช่องดิจิตอล" tvg-logo="https://cms.dmpcdn.com/livetv/2022/02/10/e00c0e00-8a3c-11ec-8f9e-831d2ccecc69_webp_original.webp",TSPORTS 7
 https://lb-gmmz.sky-cdn.com/gmm/tsport7.m3u8
 ####################################################################################
-    
-#EXTINF:-1 group-title="⚽บอลโลก" tvg-logo="https://f.ptcdn.info/428/087/000/m8g5ap59jmMLfEaSYzj-o.jpg",ball 
-#EXTVLCOPT:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36
-#EXTVLCOPT:http-referrer=https://github.com/
-https://raw.githubusercontent.com/Bluestraveller13/super-duper-spork/284b0094ab4f339fe29f54d096eeb381f69395d2/CazeTV.m3u8
 
-#EXTINF:-1 tvg-id="" tvg-logo="https://raw.githubusercontent.com/Nebiela/liveiptvneti/refs/heads/main/images.jpg" group-title="⚽บอลโลก",cazetv 1
-https://dfr80qz435crc.cloudfront.net/MNOP/Amagi/Caze/Caze_TV_BR/Caze_TV.m3u8
-
-#EXTINF:-1 tvg-id="" tvg-logo="https://raw.githubusercontent.com/Nebiela/liveiptvneti/refs/heads/main/images.jpg" group-title="⚽บอลโลก",cazetv 2
-https://raw.githubusercontent.com/rdc1793/canaisiptv/d03c08389570f97a1bf44cbc4b4b76840eaec6f0/cazetv.m3u8
-    
-#EXTINF:-1 tvg-id="" tvg-logo="https://raw.githubusercontent.com/Nebiela/liveiptvneti/refs/heads/main/images.jpg" group-title="⚽บอลโลก",cazetv 3
-https://raw.githubusercontent.com/rdc1793/canaisiptv/d03c08389570f97a1bf44cbc4b4b76840eaec6f0/cazetv.m3u8
-
-    
-#EXTINF:-1 tvg-id="" tvg-logo="https://rtm-images.glueapi.io/320x0/live_channel/TV1.jpg" group-title="⚽บอลโลก",tv1
-https://live.livedoomovies.com:4433/api/hls/live/82290/playlist.m3u8
-    
-#EXTINF:-1 tvg-id="" tvg-logo="https://cdn.aptoide.com/imgs/6/a/9/6a9d6294be85d251de1c330f2800763e_fgraphic.png" group-title="⚽บอลโลก",CTSport
-http://88.212.7.10/live/test_ctsport_25p/playlist.m3u8
-http://88.212.15.19/live/test_ctsport_25p/playlist.m3u8
-http://185.188.188.235/live/ctsport/playlist.m3u8
-
-#EXTINF:-1 tvg-logo="https://img.utdstc.com/icon/2d7/9d3/2d79d3e9064d818d12d30b94b0ea769c81f6bb7de39f15be544de462a233ab6d:200"group-title="⚽บอลโลก":http-referrer="https://github.com/",MAX01
-#EXTVLCOPT:http-referrer=https://github.com/
-http://185.246.209.113/FoxSports1HD/index.m3u8
-
-
-#EXTINF:-1 tvg-logo="https://img.utdstc.com/icon/2d7/9d3/2d79d3e9064d818d12d30b94b0ea769c81f6bb7de39f15be544de462a233ab6d:200"group-title="⚽บอลโลก":http-referrer="https://github.com/",MAX02
-#EXTVLCOPT:http-referrer=https://github.com/
-https://blive99.github.io/m3u8/sporttv/monomax2.m3u8
-
-#EXTINF:-1 group-title="" tvg-logo="https://www.newscaststudio.com/wp-content/uploads/2025/06/fox-world-cup-2026.jpg",foxsports
-https://cdn2.stream.atmflix.live/atmflixlive/foxsports/playlist.m3u8
-#####################################################################################
-
-#EXTINF:-1 tvg-id="" tvg-logo="https://ais-s.ais-vidnt.com/ais/play/origin/LIVE//channelicon/R_0148.png" group-title="🎞️ หนังภาพยนตร์",HBO
-#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36
-#EXTVLCOPT:http-origin=http://ultratv.one:2095/live
-#EXTVLCOPT:http-referrer=http://ultratv.one:2095/live/
-http://ultratv.one:2095/live/hCPtsREFtA/Xj25tg0ZXi/115704.m3u8
-
-#EXTINF:-1 group-title="🎞️ หนังภาพยนตร์" tvg-logo="https://static-cdn.jtvnw.net/jtv_user_pictures/cd0c92a3-96d1-411b-90c5-ac3f29d86485-profile_image-300x300.png",RED BULL TV
-#EXTVLCOPT:http-user-agent=Mozilla/5.0 (Linux; Android 7.1.2; TV BOX Build/NHG47L) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36
-#EXTVLCOPT:http-referrer=https://freetvdd.com/
-https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master_3360.m3u8
-
-
-#################################################################################
-#EXTINF:-1 group-title="ช่องข่าว" tvg-logo="https://i.imgur.com/tRFnV9M.png",Top News
-https://live.topnews.co.th/hls/topnews_a_720.m3u8
-#EXTINF:-1 group-title="ช่องข่าว" tvg-logo="https://i.imgur.com/h3TY38F.png",Nation TV
-https://lb-gmmz.sky-cdn.com/gmm/nation.m3u8
-#EXTINF:-1 group-title="ช่องข่าว" tvg-logo="https://58-64-52-73-rewriter.ais-vidnt.com/ais/play/origin/LIVE/channelicon/0036.png",News1
-https://server1.streamssl.com/stream/news1_mid.m3u8
-#EXTINF:-1 group-title="ช่องข่าว" tvg-logo="https://raw.githubusercontent.com/zaxacaasada/logotv/refs/heads/main/suwannabhumi.png",Suwannabhumi Channel
-https://live.bangkokstream.com:19360/suwannabhumi/suwannabhumi.m3u8
-#EXTINF:-1 group-title="ช่องข่าว" tvg-logo="https://raw.githubusercontent.com/zaxacaasada/logotv/refs/heads/main/siamthai.png",13สยามไท
-https://live.x2.co.th/live/13livetv-th_720p/index.m3u8	
 
 
 #################################################################################
