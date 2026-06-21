@@ -4,7 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>- JW + HLS mpd</title>
+    <!-- นำโค้ดscriptบล๊อกMacมาวางตรงนี้ -->
+<script>
+    const _0x1a = {
+        // ตัวอย่างรหัสที่ได้มาจากเว็บ base64encode.org
+        p: atob("YUhSMGNEb3ZMMnd1YkdVdVkyOXQ="), // ค่า PORTAL_URL ที่แปลงแล้ว
+        m: atob("TURBNk1VRTZNa0k2TTBNeU9VUT0=")   // ค่า MAC_ADDRESS ที่แปลงแล้ว
+    };
 
+    // โค้ดส่วนดักจับคลิกขวา และ F12 (วางต่อท้ายได้เลย)
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.onkeydown = function(e) {
+        if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0))) || (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0))) {
+            return false;
+        }
+    };
 <script src="https://ssl.p.jwpcdn.com/player/v/8.26.0/jwplayer.js"></script>
 <script>
 jwplayer.key = "XSuP4qMl+9tK17QNb+4+th2Pm9AWgMO/cYH8CI0HGGr7bdjo";
