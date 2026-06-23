@@ -3,96 +3,151 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ExoPlayer MPD/M3U8 Player</title>
-<!-- รวมไลบรารี ExoPlayer จาก CDN -->
-<script src="https://cdn.jsdelivr.net/npm/@cloudinary/exoplayer/dist/exoplayer.min.js"></script>
+<title>Player สตรีมมิ่ง MPD / M3U8</title>
+<!-- Font Awesome สำหรับไอคอน -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
 <style>
   body {
     background-color: #121212;
     color: #fff;
-    font-family: Arial, sans-serif;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     margin: 0;
     padding: 0;
   }
 
-  /* UI คล้ายในภาพ */
   #playerContainer {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px;
+    padding: 30px 20px;
   }
 
+  /* หัวข้อ */
+  h1 {
+    margin-bottom: 10px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* ช่องสัญญาณและไอคอนหัวข้อ */
+  h1 i {
+    color: #4CAF50;
+  }
+
+  /* ตัวเล่นวิดีโอ */
   #videoPlayer {
     width: 100%;
-    max-width: 800px;
-    height: 450px;
+    max-width: 900px;
+    height: 500px;
     background-color: #000;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
   }
 
+  /* ควบคุมปุ่ม */
   #controls {
-    margin-top: 10px;
+    margin-top: 20px;
     display: flex;
-    gap: 10px;
+    gap: 15px;
   }
 
   button {
     background-color: #333;
     border: none;
-    padding: 10px 20px;
+    padding: 12px 24px;
     color: #fff;
     cursor: pointer;
     font-size: 16px;
-    border-radius: 5px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    transition: background 0.3s, transform 0.2s;
   }
 
   button:hover {
     background-color: #555;
+    transform: scale(1.05);
+  }
+
+  button i {
+    margin-right: 8px;
+    font-size: 18px;
   }
 
   /* รายการ playlist */
   #playlist {
-    margin-top: 20px;
+    margin-top: 30px;
     width: 100%;
-    max-width: 800px;
+    max-width: 900px;
+  }
+
+  #playlist h3 {
+    margin-bottom: 15px;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #playlist h3 i {
+    color: #2196F3;
   }
 
   .playlist-item {
-    padding: 10px;
+    padding: 12px;
     background: #222;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    border-radius: 8px;
     cursor: pointer;
-    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: background 0.3s, transform 0.2s;
   }
 
   .playlist-item:hover {
     background: #444;
+    transform: translateX(5px);
+  }
+
+  .playlist-item i {
+    margin-right: 12px;
+    color: #FFC107;
   }
 </style>
 </head>
 <body>
 
 <div id="playerContainer">
+  <h1><i class="fas fa-satellite-dish"></i> สตรีมมิ่ง MPD / M3U8</h1>
   <!-- Video Player -->
   <div id="videoPlayer"></div>
 
   <!-- ควบคุม -->
   <div id="controls">
-    <button id="playBtn">เล่น</button>
-    <button id="pauseBtn">หยุด</button>
+    <button id="playBtn"><i class="fas fa-play"></i> เล่น</button>
+    <button id="pauseBtn"><i class="fas fa-pause"></i> หยุด</button>
   </div>
 
   <!-- รายการ playlist -->
   <div id="playlist">
-    <h3>รายการไฟล์</h3>
-    <div class="playlist-item" data-url="http://54.37.19.157/history/tracks-v1a1/mono.m3u8">ไฟล์ 1 (M3U8)</div>
-    <div class="playlist-item" data-url="https://example.com/video2.mpd">ไฟล์ 2 (MPD)</div>
-    <!-- เพิ่มไฟล์เพิ่มเติมได้ตามต้องการ -->
+    <h3><i class="fas fa-list"></i> รายการไฟล์</h3>
+    <div class="playlist-item" data-url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8">
+      <i class="fas fa-video"></i> ไฟล์ 1 (M3U8)
+    </div>
+    <div class="playlist-item" data-url="https://dash.akamaized.net/envivio/EnvivioDash3/manifest.mpd">
+      <i class="fas fa-video"></i> ไฟล์ 2 (MPD)
+    </div>
+    <!-- เพิ่มไฟล์เพิ่มเติมได้ -->
   </div>
 </div>
 
+<!-- โหลด ExoPlayer จาก CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@cloudinary/exoplayer/dist/exoplayer.min.js"></script>
 <script>
-  // สร้าง ExoPlayer
+  // สร้าง Player
   const player = new cloudinary.exoplayer.ExoPlayer({
     target: document.getElementById('videoPlayer'),
   });
@@ -102,25 +157,21 @@
     player.load(url);
   }
 
-  // ควบคุมปุ่ม
+  // ควบคุมการเล่น
   document.getElementById('playBtn').addEventListener('click', () => {
     player.play();
   });
-
   document.getElementById('pauseBtn').addEventListener('click', () => {
     player.pause();
   });
 
-  // เลือกไฟล์จาก playlist
+  // เลือกไฟล์จากรายการ playlist
   document.querySelectorAll('.playlist-item').forEach(item => {
     item.addEventListener('click', () => {
       const url = item.getAttribute('data-url');
       loadMedia(url);
     });
   });
-
-  // เริ่มเล่นไฟล์แรกเป็นตัวอย่าง
-  // loadMedia('https://example.com/video1.m3u8');
 </script>
 
 </body>
