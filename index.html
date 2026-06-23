@@ -1,172 +1,127 @@
-<h2>plaLIVETV</h2>
-<html>
+<!DOCTYPE html>
+<html lang="th">
 <head>
-<title>STREAM</title>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<meta name="description" content="IPTV M3U8">
-<meta name="keywords" content="กีฬาออนไลน์.">
-<meta name="author" content="TV">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<link rel="shortcut icon" type="image/x-icon" href="https://ais-s.ais-vidnt.com/ais/play/origin/VOD/images/LoyKatong_IconTV.png">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.6.2/dist/plyr.css" />
-<script src="https://cdn.jsdelivr.net/npm/plyr@3.6.12/dist/plyr.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.1.4/dist/hls.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ExoPlayer MPD/M3U8 Player</title>
+<!-- รวมไลบรารี ExoPlayer จาก CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@cloudinary/exoplayer/dist/exoplayer.min.js"></script>
 <style>
-        html {
-            font-family: Poppins;
-            background: #000;
-            margin: 0;
-            padding: 0
-        }
+  body {
+    background-color: #121212;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
 
-        .loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #111;
-            z-index: 9999;
-        }
+  /* UI คล้ายในภาพ */
+  #playerContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
 
-        .loading-text {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            margin: auto;
-            text-align: center;
-            width: 100%;
-            height: 100px;
-            line-height: 100px;
-        }
+  #videoPlayer {
+    width: 100%;
+    max-width: 800px;
+    height: 450px;
+    background-color: #000;
+  }
 
-        .loading-text span {
-            display: inline-block;
-            margin: 0 5px;
-            color: #7DFF9F;
-            font-family: 'Quattrocento Sans', sans-serif;
-        }
+  #controls {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+  }
 
-        .loading-text span:nth-child(1) {
-            filter: blur(0px);
-            animation: blur-text 1.5s 0s infinite linear alternate;
-        }
+  button {
+    background-color: #333;
+    border: none;
+    padding: 10px 20px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 5px;
+  }
 
-        .loading-text span:nth-child(2) {
-            filter: blur(0px);
-            animation: blur-text 1.5s 0.2s infinite linear alternate;
-        }
+  button:hover {
+    background-color: #555;
+  }
 
-        .loading-text span:nth-child(3) {
-            filter: blur(0px);
-            animation: blur-text 1.5s 0.4s infinite linear alternate;
-        }
+  /* รายการ playlist */
+  #playlist {
+    margin-top: 20px;
+    width: 100%;
+    max-width: 800px;
+  }
 
-        .loading-text span:nth-child(4) {
-            filter: blur(0px);
-            animation: blur-text 1.5s 0.6s infinite linear alternate;
-        }
+  .playlist-item {
+    padding: 10px;
+    background: #222;
+    margin-bottom: 5px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
 
-        .loading-text span:nth-child(5) {
-            filter: blur(0px);
-            animation: blur-text 1.5s 0.8s infinite linear alternate;
-        }
-
-        .loading-text span:nth-child(6) {
-            filter: blur(0px);
-            animation: blur-text 1.5s 1s infinite linear alternate;
-        }
-
-        .loading-text span:nth-child(7) {
-            filter: blur(0px);
-            animation: blur-text 1.5s 1.2s infinite linear alternate;
-        }
-
-        .loading-text span:nth-child(8) {
-            filter: blur(0px);
-            animation: blur-text 1.5s 1.4s infinite linear alternate;
-        }
-        
-        .loading-text span:nth-child(9) {
-            filter: blur(0px);
-            animation: blur-text 1.5s 1.6s infinite linear alternate;
-        }
-        @keyframes blur-text {
-            0% {
-                filter: blur(0px);
-            }
-
-            100% {
-                filter: blur(4px);
-            }
-        }
-
-        .plyr__video-wrapper::after {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            z-index: 10;
-            content: '';
-            height: 35px;
-            width: 35px;
-            background: no-repeat;
-            background-size: 40px, auto, auto;
-        }
-    </style>
+  .playlist-item:hover {
+    background: #444;
+  }
+</style>
+</head>
 <body>
-<div id="loading" class="loading">
-<div class="loading-text">
-<span class="loading-text-words">P</span>
-<span class="loading-text-words">L</span>
-<span class="loading-text-words">A</span>
-<span class="loading-text-words">Y</span>
-<span class="loading-text-words">I</span>
-<span class="loading-text-words">D</span>
-<span class="loading-text-words">T</span>
-<span class="loading-text-words">V</span>
-</div>
-</div>
-<video autoplay controls crossorigin playsinline>
-<source type="application/vnd.apple.mpegurl" src="http://54.37.19.157/history/tracks-v1a1/mono.m3u8"> </video>
- </video>
-</body>
-<script>
-    setTimeout(videovisible, 3000)
 
-    function videovisible() {
-        document.getElementById('loading').style.display = 'none'
-    }
-    document.addEventListener("DOMContentLoaded", () => {
-        const e = document.querySelector("video"),
-            n = e.getElementsByTagName("source")[0].src,
-            o = {};
-        if (Hls.isSupported()) {
-            var config = {
-                maxMaxBufferLength: 100,
-            };
-            const t = new Hls(config);
-            t.loadSource(n), t.on(Hls.Events.MANIFEST_PARSED, function(n, l) {
-                const s = t.levels.map(e => e.height);
-                o.quality = {
-                    default: s[0],
-                    options: s,
-                    forced: !0,
-                    onChange: e => (function(e) {
-                        window.hls.levels.forEach((n, o) => {
-                            n.height === e && (window.hls.currentLevel = o)
-                        })
-                    })(e)
-                };
-                new Plyr(e, o)
-            }), t.attachMedia(e), window.hls = t
-        } else {
-            new Plyr(e, o)
-        }
+<div id="playerContainer">
+  <!-- Video Player -->
+  <div id="videoPlayer"></div>
+
+  <!-- ควบคุม -->
+  <div id="controls">
+    <button id="playBtn">เล่น</button>
+    <button id="pauseBtn">หยุด</button>
+  </div>
+
+  <!-- รายการ playlist -->
+  <div id="playlist">
+    <h3>รายการไฟล์</h3>
+    <div class="playlist-item" data-url="https://example.com/video1.m3u8">ไฟล์ 1 (M3U8)</div>
+    <div class="playlist-item" data-url="https://example.com/video2.mpd">ไฟล์ 2 (MPD)</div>
+    <!-- เพิ่มไฟล์เพิ่มเติมได้ตามต้องการ -->
+  </div>
+</div>
+
+<script>
+  // สร้าง ExoPlayer
+  const player = new cloudinary.exoplayer.ExoPlayer({
+    target: document.getElementById('videoPlayer'),
+  });
+
+  // ฟังก์ชันโหลดไฟล์
+  function loadMedia(url) {
+    player.load(url);
+  }
+
+  // ควบคุมปุ่ม
+  document.getElementById('playBtn').addEventListener('click', () => {
+    player.play();
+  });
+
+  document.getElementById('pauseBtn').addEventListener('click', () => {
+    player.pause();
+  });
+
+  // เลือกไฟล์จาก playlist
+  document.querySelectorAll('.playlist-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const url = item.getAttribute('data-url');
+      loadMedia(url);
     });
+  });
+
+  // เริ่มเล่นไฟล์แรกเป็นตัวอย่าง
+  // loadMedia('https://example.com/video1.m3u8');
 </script>
+
 </body>
 </html>
