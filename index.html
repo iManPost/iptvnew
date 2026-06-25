@@ -1,41 +1,284 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
-<title>Mono Plus</title>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<meta content="IE=edge" http-equiv="X-UA-Compatible">
-<script src="//ssl.p.jwpcdn.com/player/v/8.26.0/jwplayer.js"></script>
-<script> jwplayer.key = 'XSuP4qMl+9tK17QNb+4+th2Pm9AWgMO/cYH8CI0HGGr7bdjo';
-</script>
-<div id="player"></div>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video Player</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0f;
+      color: #e8e8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .player-wrap {
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .player-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #e63946;
+      box-shadow: 0 0 8px #e63946aa;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .player-header h1 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #a0a0b8;
+    }
+
+    .video-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #111118;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.06);
+    }
+
+    video {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10,10,15,0.75);
+      transition: opacity 0.3s;
+    }
+
+    .overlay.hidden { opacity: 0; pointer-events: none; }
+
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #e63946;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .overlay p {
+      font-size: 0.8rem;
+      color: #6868a0;
+      letter-spacing: 0.06em;
+    }
+
+    .error-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .error-state.show { display: flex; }
+
+    .error-icon { font-size: 2rem; }
+
+    .error-state p {
+      font-size: 0.82rem;
+      color: #e63946;
+      max-width: 320px;
+      line-height: 1.5;
+    }
+
+    .retry-btn {
+      margin-top: 6px;
+      padding: 8px 22px;
+      background: #e63946;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .retry-btn:hover { background: #c1121f; }
+
+    .player-footer {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2px;
+    }
+
+    .stream-url {
+      font-size: 0.72rem;
+      color: #44445a;
+      font-family: monospace;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 80%;
+    }
+
+    .quality-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #4caf7d;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<div class="player-wrap">
+  <div class="player-header">
+    <div class="dot"></div>
+    <h1>Live Stream</h1>
+  </div>
+
+  <div class="video-container">
+    <video id="video" controls playsinline></video>
+    <div class="overlay" id="overlay">
+      <div class="spinner"></div>
+      <p>กำลังโหลดสตรีม…</p>
+    </div>
+    <div class="overlay hidden" id="error-overlay">
+      <div class="error-state show">
+        <div class="error-icon">⚠️</div>
+        <p id="error-msg">ไม่สามารถเชื่อมต่อสตรีมได้</p>
+        <button class="retry-btn" onclick="initPlayer()">ลองใหม่</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="player-footer">
+    <span class="stream-url" id="url-label">http://43.229.132.25:80/play/bQ-fFu7dMOtIPDjoXbK1w5H53SITSMYtRd-Oqf6wLL0/m3u8</span>
+    <span class="quality-badge" id="quality-badge">HLS</span>
+  </div>
+</div>
+
 <script>
-    var playerInstance = jwplayer("player");
+  const SRC = "http://43.229.132.25:80/play/bQ-fFu7dMOtIPDjoXbK1w5H53SITSMYtRd-Oqf6wLL0/m3u8";
+  const video = document.getElementById("video");
+  const overlay = document.getElementById("overlay");
+  const errorOverlay = document.getElementById("error-overlay");
+  const errorMsg = document.getElementById("error-msg");
+  const qualityBadge = document.getElementById("quality-badge");
+  let hls;
 
-    playerInstance.setup({
-
-        playlist: [{
-"image": "https://www.dropbox.com/scl/fi/563mscujyrmynb03qvwtp/wandering-oldman-logo.png?rlkey=a6v56e1rgt96luwlzqe2ofbfi&dl=1",
-"sources": [
-{
-"default": true,
-"type": "hls",
-"file": 'http://43.229.132.25:80/play/bQ-fFu7dMOtIPDjoXbK1w5H53SITSMYtRd-Oqf6wLL0/m3u8',
-"label": "1"
-}
-]
-}],
-logo: { file: "https://dl.dropbox.com/scl/fi/uydidwzleznktuq5btwwe/logo-4.jpg?rlkey=nvqxtzx2vc2dwoc5phvm02y7y&dl=0", position: 'bottom-right' },
- width: "100%",
-        height: "100%",
-        aspectratio: "16:9",
-        mute: false,
-        autostart: true,
-        cast: {},
-    });
-    if (getLang == "") {
-   lang = 1;
+  function showOverlay() {
+    overlay.classList.remove("hidden");
+    errorOverlay.classList.add("hidden");
   }
-  jwplayer().on('play', function(e) {
-    jwplayer().setCurrentAudioTrack(lang);
+
+  function hideOverlay() {
+    overlay.classList.add("hidden");
+  }
+
+  function showError(msg) {
+    overlay.classList.add("hidden");
+    errorOverlay.classList.remove("hidden");
+    errorMsg.textContent = msg || "ไม่สามารถเชื่อมต่อสตรีมได้";
+  }
+
+  function initPlayer() {
+    if (hls) { hls.destroy(); hls = null; }
+    showOverlay();
+
+    if (Hls.isSupported()) {
+      hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+        backBufferLength: 30,
+      });
+
+      hls.loadSource(SRC);
+      hls.attachMedia(video);
+
+      hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
+        const levels = data.levels;
+        if (levels && levels.length > 0) {
+          const top = levels[levels.length - 1];
+          if (top.height) qualityBadge.textContent = top.height + "p";
+        }
+        video.play().catch(() => {});
+      });
+
+      hls.on(Hls.Events.FRAG_LOADED, () => { hideOverlay(); });
+
+      hls.on(Hls.Events.ERROR, (e, data) => {
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              showError("เกิดข้อผิดพลาดเครือข่าย — กรุณาตรวจสอบการเชื่อมต่อ");
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              hls.recoverMediaError();
+              break;
+            default:
+              showError("เกิดข้อผิดพลาด: " + data.details);
+          }
+        }
+      });
+
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      // Safari native HLS
+      video.src = SRC;
+      video.addEventListener("loadedmetadata", () => {
+        hideOverlay();
+        video.play().catch(() => {});
+      }, { once: true });
+      video.addEventListener("error", () => {
+        showError("ไม่รองรับการเล่นสตรีมนี้บนเบราว์เซอร์นี้");
+      }, { once: true });
+    } else {
+      showError("เบราว์เซอร์ของคุณไม่รองรับ HLS");
+    }
+  }
+
+  video.addEventListener("playing", hideOverlay);
+  video.addEventListener("waiting", () => {
+    overlay.querySelector("p").textContent = "กำลังบัฟเฟอร์…";
+    overlay.classList.remove("hidden");
   });
+  video.addEventListener("playing", hideOverlay);
+
+  initPlayer();
 </script>
+
+</body>
+</html>
