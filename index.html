@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Video Player</title>
+
+  <!-- Video.js -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.10.0/video-js.min.css" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.10.0/video.min.js"></script>
+  <!-- videojs-contrib-hls / http-streaming (built into Video.js 7+) -->
+  <!-- HLS.js fallback -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
+
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{
+      width:100%;height:100%;
+      background:#07070d;
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      font-family:'Segoe UI',system-ui,sans-serif;
+      color:#ddd;
+    }
+    .wrap{width:100%;max-width:960px;padding:16px}
+    h1{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:#555;margin-bottom:10px}
+
+    /* Video.js skin overrides */
+    .video-js{width:100%!important;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#111}
+    .vjs-big-play-button{
+      top:50%!important;left:50%!important;
+      transform:translate(-50%,-50%)!important;
+      border-radius:50%!important;
+      width:64px!important;height:64px!important;
+      line-height:64px!important;
+      border:2px solid rgba(255,255,255,.25)!important;
+      background:rgba(10,10,20,.7)!important;
+    }
+    .vjs-big-play-button:hover{background:rgba(230,57,70,.85)!important;}
+
+    /* status bar */
+    .statusbar{
+      margin-top:10px;display:flex;align-items:center;
+      justify-content:space-between;gap:8px;
+      padding:0 4px;font-size:.7rem;
+    }
+    .dot{width:8px;height:8px;border-radius:50%;background:#555;flex-shrink:0;transition:background .4s}
+    .dot.live{background:#e63946;box-shadow:0 0 6px #e6394688;animation:blink 1.8s ease-in-out infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    .url{color:#333;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+    .badge{color:#4caf7d;font-weight:700;letter-spacing:.08em;flex-shrink:0}
+
+    /* error box */
+    #errbox{
+      display:none;margin-top:12px;padding:14px 18px;
+      background:#1a0a0a;border:1px solid #4a1010;border-radius:8px;
+      font-size:.8rem;line-height:1.6;color:#e07070;
+    }
+    #errbox ul{margin:.4em 0 0 1.2em}
+    #errbox a{color:#e63946;text-decoration:none}
+    #errbox a:hover{text-decoration:underline}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>▶ Stream Player</h1>
+
+  <video
+    id="myVideo"
+    class="video-js vjs-default-skin vjs-big-play-centered"
+    controls
+    preload="auto"
+    playsinline
+    crossorigin="anonymous">
+  </video>
+
+  <div class="statusbar">
+    <div class="dot" id="dot"></div>
+    <span class="url" id="urlLabel"></span>
+    <span class="badge" id="badge">HLS</span>
+  </div>
+
+  <div id="errbox"></div>
+</div>
+
+<script>
+const STREAM = "https://cdn-6.pishow.tv/live/13/master.m3u8";
+document.getElementById("urlLabel").textContent = STREAM;
+
+/* ── helper ── */
+function setLive(on){ document.getElementById("dot").className = "dot" + (on?" live":""); }
+function showErr(html){ const b=document.getElementById("errbox"); b.innerHTML=html; b.style.display="block"; }
+function hideErr(){ document.getElementById("errbox").style.display="none"; }
+
+/* ── Video.js init ── */
+const player = videojs("myVideo", {
+  fluid: true,
+  html5: {
+    vhs: {
+      overrideNative: true,          // force VHS (Video.js HTTP Streaming)
+      withCredentials: false,
+      allowSeeksWithinUnsafeLiveWindow: true,
+      handleManifestRedirects: true,
+    },
+    nativeVideoTracks: false,
+    nativeAudioTracks: false,
+    nativeTextTracks: false,
+  },
+  liveui: true,
+  errorDisplay: false,               // we handle errors ourselves
+});
+
+/* Set source — Video.js VHS handles m3u8 natively */
+player.src({ src: STREAM, type: "application/x-mpegURL" });
+
+player.on("playing", () => { setLive(true); hideErr(); });
+player.on("pause",   () => setLive(false));
+player.on("ended",   () => setLive(false));
+
+player.on("loadedmetadata", () => {
+  const q = player.videoHeight();
+  if(q) document.getElementById("badge").textContent = q+"p";
+});
+
+player.on("error", () => {
+  setLive(false);
+  /* ── Fallback: try raw HLS.js directly ── */
+  if(Hls.isSupported()){
+    console.warn("[Player] Video.js error — falling back to HLS.js");
+    player.dispose();
+
+    const vid = document.createElement("video");
+    vid.id="rawVideo"; vid.controls=true; vid.playsinline=true;
+    vid.style.cssText="width:100%;aspect-ratio:16/9;border-radius:10px;background:#111";
+    document.getElementById("myVideo") && document.getElementById("myVideo").replaceWith(vid);
+
+    const hls = new Hls({
+      enableWorker: true,
+      lowLatencyMode: true,
+      xhrSetup: xhr => { xhr.withCredentials = false; }
+    });
+    hls.loadSource(STREAM);
+    hls.attachMedia(vid);
+    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      hideErr(); setLive(true); vid.play().catch(()=>{});
+    });
+    hls.on(Hls.Events.FRAG_LOADED, () => { setLive(true); hideErr(); });
+    hls.on(Hls.Events.ERROR, (_,d) => {
+      if(d.fatal) handleFinalError(d.details);
+    });
+  } else {
+    handleFinalError("Browser does not support HLS.js");
+  }
+});
+
+function handleFinalError(detail){
+  setLive(false);
+  showErr(`
+    <strong>⚠️ เล่นไม่ได้</strong><br>
+    สาเหตุที่เป็นไปได้:
+    <ul>
+      <li>URL ต้นทางออฟไลน์อยู่ หรือ token หมดอายุ</li>
+      <li>เบราว์เซอร์บล็อก <strong>Mixed Content</strong> (HTTPS→HTTP) —
+        ลองเปิดในแท็บ HTTP ปกติ หรือปิด HTTPS upgrade ชั่วคราว</li>
+      <li>CORS: เซิร์ฟเวอร์ต้นทางไม่อนุญาต cross-origin request</li>
+    </ul>
+    <br>detail: <code>${detail}</code><br><br>
+    <a href="${STREAM}" target="_blank">เปิด URL ตรงใน Tab ใหม่</a>
+  `);
+}
+
+/* Auto-play on load */
+player.ready(() => { player.play().catch(()=>{}); });
+</script>
+</body>
+</html>
