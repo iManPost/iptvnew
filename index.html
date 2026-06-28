@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ผู้เฒ่าพเนจร - IPTV Player (ฝัง M3U URL)</title>
+    <title> Player (ฝัง M3U URL)</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: white; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
@@ -112,17 +112,17 @@
 
 <div id="sidebar">
     <div class="sidebar-header">
-        ผู้เฒ่าพเนจร
+       เลือกช่อง ซีรีย์
         <button class="close-btn" onclick="toggleSidebar()">×</button>
     </div>
-    <div id="channel-list"><div class="loading-text">กำลังโหลดรายการช่อง...</div></div>
+    <div id="channel-list"><div class="loading-text">กำลังโหลดข้อมูล...</div></div>
 </div>
 
 <div id="main-content">
     <div id="top-bar">
         <button id="menu-toggle" onclick="toggleSidebar()">☰</button>
-        <span id="current-channel-name">เลือกช่องจากเมน้านซ้าย</span>
-        <button id="hardRefreshBtn" class="refresh-btn">✨ โหลด Playlist ใหม่ (ไม่ใช้แคช)</button>
+        <span id="current-channel-name">เลือกช่องจากเมนูซ้าย</span>
+        <button id="hardRefreshBtn" class="refresh-btn"> โหลด Playlist </button>
         <span id="cacheIndicator" class="status-cache"></span>
     </div>
 
@@ -135,14 +135,15 @@
     </div>
 
     <div id="player-controls">
-        <button class="player-select-btn active" onclick="changePlayer('mx', this)">📱 MX Player</button>
-        <button class="player-select-btn" onclick="changePlayer('wiseplay', this)">🎬 Wiseplay</button>
+        <button class="player-select-btn" onclick="changePlayer('wiseplay', this)"> ตัวเล่น Wiseplay</button>
+        <button class="player-select-btn active" onclick="changePlayer('mx', this)"> ตัวเล่น MXPlayer</button>
+        <button class="player-select-btn active" onclick="changePlayer('mx', this)"> ตัวเล่น HLS</button>
     </div>
 </div>
 
 <script>
     // ======================== 🔧 แก้ไข URL ของ M3U Playlist ได้ตรงนี้ ========================
-    // เพียงแค่เปลี่ยนลิงก์ด้านล่างเป็นลิงก์ M3U ที่คุณต้องการ (รองรับ Dropbox, Google Drive, URL ทั่วไป)
+    // เพียงแค่เปลี่ยนลิงก์ด้านล่างเป็นลิงก์ M3U ที่คุณต้องการ (รองรับลิงก์ Dropbox, Google Drive, URL github ทั่วไป)
     const M3U_PLAYLIST_URL = 'https://dl.dropbox.com/scl/fi/0ya3v0t2j3icvx5cx0glo/Seriesday-10.m3u?rlkey=9ynt6ytm54v1cmfhjpjc4b0m9&dl=1';
     // ======================================================================================
     
@@ -270,7 +271,7 @@
             document.getElementById('cacheIndicator').innerHTML = '✅ โหลดสำเร็จ';
             setTimeout(() => {
                 if(document.getElementById('cacheIndicator').innerHTML === '✅ โหลดสำเร็จ')
-                    document.getElementById('cacheIndicator').innerHTML = '🎬 พร้อม';
+                    document.getElementById('cacheIndicator').innerHTML = '✅สถานะ:สำเร็จ';
             }, 3000);
         } catch (error) {
             console.error(error);
