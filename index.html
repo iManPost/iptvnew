@@ -112,7 +112,7 @@
 
 <div id="sidebar">
     <div class="sidebar-header">
-       เลือกช่อง ซีรีย์
+       เลือกดูช่อง ซีรีย์
         <button class="close-btn" onclick="toggleSidebar()">×</button>
     </div>
     <div id="channel-list"><div class="loading-text">กำลังโหลดข้อมูล...</div></div>
@@ -120,8 +120,8 @@
 
 <div id="main-content">
     <div id="top-bar">
-        <button id="menu-toggle" onclick="toggleSidebar()">☰</button>
-        <span id="current-channel-name">เลือกช่องจากเมนูซ้าย</span>
+        <button id="menu-toggle" onclick="toggleSidebar()">𓃑</button>
+        <span id="current-channel-name">เลือกช่องจาก เมนูด้านซ้าย</span>
         <button id="hardRefreshBtn" class="refresh-btn"> โหลด Playlist </button>
         <span id="cacheIndicator" class="status-cache"></span>
     </div>
@@ -137,7 +137,8 @@
     <div id="player-controls">
         <button class="player-select-btn" onclick="changePlayer('wiseplay', this)"> ตัวเล่น Wiseplay</button>
         <button class="player-select-btn active" onclick="changePlayer('mx', this)"> ตัวเล่น MXPlayer</button>
-        <button class="player-select-btn active" onclick="changePlayer('mx', this)"> ตัวเล่น HLS</button>
+        <button class="player-select-btn active" onclick="changePlayer('hls', this)"> ตัวเล่น HLS</button>
+        <button class="player-select-btn active" onclick="changePlayer('jw', this)"> ตัวเล่น JW</button>
     </div>
 </div>
 
